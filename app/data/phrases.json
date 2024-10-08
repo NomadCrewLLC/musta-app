@@ -1,0 +1,32 @@
+{
+  "phrases": [
+    {
+      "phrase": "Magandang araw",
+      "translation": "Good day"
+    },
+    {
+      "phrase": "Magandang umaga",
+      "translation": "Good morning"
+    },
+    {
+      "phrase": "Magandang hapon",
+      "translation": "Good afternoon"
+    },
+    {
+      "phrase": "Magandang gabi",
+      "translation": "Good evening"
+    },
+    {
+      "phrase": "Hello",
+      "translation": "Kamusta"
+    },
+    {
+      "phrase": "Salamat",
+      "translation": "Thank you"
+    },
+    {
+      "phrase": "Maraming salamat",
+      "translation": "Thank you very much"
+    }
+  ]
+}
