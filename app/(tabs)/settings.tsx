@@ -1,24 +1,91 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { StyleSheet, Image, Switch } from "react-native";
 import ParallaxScrollView from "@/components/ParallaxScrollView";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { schedulePushNotification, cancelScheduledNotification } from "@/hooks/notifications.hooks"
+
+const STORAGE_KEY = "notification_prefereces";
 
 export default function TabTwoScreen() {
-  type SwitchDuration = 'notifyEvery3Seconds' | 'notifyEvery5Seconds';
-  const [isEnabled, setIsEnabled] = useState(false);
-  const [switchStates, setSwitchStates] = useState<Record<SwitchDuration, boolean>>({
-    notifyEvery3Seconds: false,
-    notifyEvery5Seconds: false,
-  })
+  const scheduledHourOptions = [3, 5];
+  interface ScheduledTimeConfig {
+    [key: number]: scheduledHourProps;
+  }
+  type scheduledHourProps = {
+    isEnabled: boolean;
+    notificationID: string | null;
+  };
 
-  function toggleSwitch(switchName: SwitchDuration) {
-    setSwitchStates((prevState) => ({
-      ...prevState,
-      [switchName]: !prevState[switchName],
-    })) 
+  const [switchStates, setSwitchStates] = useState<ScheduledTimeConfig>({});
+  const [loading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    loadSavedPreferences();
+  }, []);
+
+  async function loadSavedPreferences() {
+    try {
+      setIsLoading(true);
+      const savedPreferences = await AsyncStorage.getItem(STORAGE_KEY);
+
+      if (savedPreferences != null) {
+        setSwitchStates(JSON.parse(savedPreferences));
+
+      } else {
+        // initialized default states if no saved preferences exist
+        const defaultStates = scheduledHourOptions.reduce(
+          (acc, time) => ({
+            ...acc,
+            [time]: { isEnabled: false, notificationID: null },
+          }),
+          {}
+        );
+        setSwitchStates(defaultStates);
+        await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(defaultStates));
+      }
+    } catch (error) {
+      console.error(
+        "Error loading preferences:",
+        error instanceof Error ? error.message : "Unknown error"
+      );
+    } finally {
+      setIsLoading(false);
+    }
   }
 
+  async function toggleSwitch(time: number) {
+    try {
+      if (switchStates[time].isEnabled) {
+        const id = await schedulePushNotification(time);
+
+        const newSwitchStates = {
+          ...switchStates,
+          [time]: { isEnabled: !switchStates[time].isEnabled, notificationID: id}
+        }
+
+        setSwitchStates(newSwitchStates)
+
+        await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(newSwitchStates));
+
+      } else {
+        await cancelScheduledNotification(switchStates[time].notificationID);
+
+        const newSwitchStates = {
+          ...switchStates,
+          [time]: { isEnabled: !switchStates[time].isEnabled, notificationID: null}        
+        }
+
+        setSwitchStates(newSwitchStates)
+        await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(newSwitchStates));
+      }
+
+    } catch (error) {
+      console.log(error);
+    }
+
+  }
 
   return (
     <ParallaxScrollView
@@ -31,31 +98,35 @@ export default function TabTwoScreen() {
       }
     >
       <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Explore</ThemedText>
+        <ThemedText type="title">Settings</ThemedText>
       </ThemedView>
       <ThemedText>
-        This app includes example code to help you get started.
+        Set your preferred notification frequency.
       </ThemedText>
-      <ThemedView style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between'}}>
-        <ThemedText>Notify me every 3 seconds</ThemedText>
-        <Switch
-          trackColor={{ false: "#767577", true: "#81b0ff" }}
-          thumbColor={isEnabled ? "#f5dd4b" : "#f4f3f4"}
-          ios_backgroundColor="#3e3e3e"
-          onValueChange={() => toggleSwitch('notifyEvery3Seconds')}
-          value={switchStates.notifyEvery3Seconds}
-        />
-      </ThemedView>
-      <ThemedView style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between'}}>
-        <ThemedText>Notify me every 5 seconds</ThemedText>
-        <Switch
-          trackColor={{ false: "#767577", true: "#81b0ff" }}
-          thumbColor={isEnabled ? "#f5dd4b" : "#f4f3f4"}
-          ios_backgroundColor="#3e3e3e"
-          onValueChange={() => toggleSwitch('notifyEvery5Seconds')}
-          value={switchStates.notifyEvery5Seconds}
-        />
-      </ThemedView>
+      {Object.keys(switchStates).length > 0 &&
+        scheduledHourOptions.map((time) => {
+          return (
+            <ThemedView
+              key={time}
+              style={{
+                display: "flex",
+                flexDirection: "row",
+                justifyContent: "space-between",
+              }}
+            >
+              <ThemedText>Notify me every {time} seconds</ThemedText>
+              <Switch
+                trackColor={{ false: "#767577", true: "#81b0ff" }}
+                thumbColor={
+                  switchStates[time].isEnabled ? "#f5dd4b" : "#f4f3f4"
+                }
+                ios_backgroundColor="#3e3e3e"
+                onValueChange={() => toggleSwitch(time)}
+                value={switchStates[time].isEnabled}
+              />
+            </ThemedView>
+          );
+        })}
     </ParallaxScrollView>
   );
 }
