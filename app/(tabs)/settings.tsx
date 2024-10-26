@@ -57,7 +57,7 @@ export default function TabTwoScreen() {
 
   async function toggleSwitch(time: number) {
     try {
-      if (switchStates[time].isEnabled) {
+      if (!switchStates[time].isEnabled) {
         const id = await schedulePushNotification(time);
 
         const newSwitchStates = {
