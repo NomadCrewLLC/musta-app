@@ -40,4 +40,5 @@ export async function clearStorage() {
 }
 
 // Example usage
+//clearStorage() 
 

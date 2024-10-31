@@ -4,19 +4,21 @@ import ParallaxScrollView from "@/components/ParallaxScrollView";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { schedulePushNotification, cancelScheduledNotification } from "@/hooks/notifications.hooks"
+import {
+  schedulePushNotification,
+  cancelScheduledNotification,
+} from "@/hooks/notifications.hooks";
+import { ScheduledTimeConfig, scheduledHourProps } from "@/helpers/props.helper";
 
 const STORAGE_KEY = "notification_prefereces";
 
 export default function TabTwoScreen() {
   const scheduledHourOptions = [3, 5];
+
   interface ScheduledTimeConfig {
-    [key: number]: scheduledHourProps;
-  }
-  type scheduledHourProps = {
     isEnabled: boolean;
     notificationID: string | null;
-  };
+  }
 
   const [switchStates, setSwitchStates] = useState<ScheduledTimeConfig>({});
   const [loading, setIsLoading] = useState(false);
@@ -32,7 +34,6 @@ export default function TabTwoScreen() {
 
       if (savedPreferences != null) {
         setSwitchStates(JSON.parse(savedPreferences));
-
       } else {
         // initialized default states if no saved preferences exist
         const defaultStates = scheduledHourOptions.reduce(
@@ -57,34 +58,38 @@ export default function TabTwoScreen() {
 
   async function toggleSwitch(time: number) {
     try {
-      if (!switchStates[time].isEnabled) {
+      const newIsEnabledValue = !switchStates[time].isEnabled;
+      if (newIsEnabledValue) {
         const id = await schedulePushNotification(time);
 
         const newSwitchStates = {
           ...switchStates,
-          [time]: { isEnabled: !switchStates[time].isEnabled, notificationID: id}
-        }
+          [time]: { isEnabled: newIsEnabledValue, notificationID: id },
+        };
 
-        setSwitchStates(newSwitchStates)
+        setSwitchStates(newSwitchStates);
 
-        await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(newSwitchStates));
-
+        await AsyncStorage.setItem(
+          STORAGE_KEY,
+          JSON.stringify(newSwitchStates)
+        );
       } else {
         await cancelScheduledNotification(switchStates[time].notificationID);
 
         const newSwitchStates = {
           ...switchStates,
-          [time]: { isEnabled: !switchStates[time].isEnabled, notificationID: null}        
-        }
+          [time]: { isEnabled: newIsEnabledValue, notificationID: null },
+        };
 
-        setSwitchStates(newSwitchStates)
-        await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(newSwitchStates));
+        setSwitchStates(newSwitchStates);
+        await AsyncStorage.setItem(
+          STORAGE_KEY,
+          JSON.stringify(newSwitchStates)
+        );
       }
-
     } catch (error) {
       console.log(error);
     }
-
   }
 
   return (
@@ -100,9 +105,7 @@ export default function TabTwoScreen() {
       <ThemedView style={styles.titleContainer}>
         <ThemedText type="title">Settings</ThemedText>
       </ThemedView>
-      <ThemedText>
-        Set your preferred notification frequency.
-      </ThemedText>
+      <ThemedText>Set your preferred notification frequency.</ThemedText>
       {Object.keys(switchStates).length > 0 &&
         scheduledHourOptions.map((time) => {
           return (
