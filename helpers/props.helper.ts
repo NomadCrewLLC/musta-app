@@ -6,9 +6,11 @@ export type scheduledHourProps = {
     notificationID: string | null;
   };
 
-  export interface SelectedItemProps {
+  export interface NotificationTimeProps {
     isEnabled: boolean,
+    isCustom: boolean,
     id: number,
-    time: string
+    time: Date,
+    notificationID: string | null;
   }
   

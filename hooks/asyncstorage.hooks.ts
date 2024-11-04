@@ -15,9 +15,6 @@ export async function checkLocalStorage(key: string) {
   }
 }
 
-// Example usage
-// checkLocalStorage("notification_prefereces");
-
 export async function getAllKeys() {
   try {
     const keys = await AsyncStorage.getAllKeys();
@@ -26,9 +23,6 @@ export async function getAllKeys() {
     console.error("Error fetching keys from AsyncStorage:", error);
   }
 }
-
-// Example usage
-// getAllKeys();
 
 export async function clearStorage() {
   try {
@@ -39,6 +33,5 @@ export async function clearStorage() {
   }
 }
 
-// Example usage
-//clearStorage() 
+
 

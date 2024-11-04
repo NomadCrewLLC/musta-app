@@ -18,6 +18,7 @@ export function TimeItemRightAction({ id, progress, dragX, removeCustomTime }: P
     <TouchableOpacity
       style={styles.deleteAction}
       onPress={() => removeCustomTime(id)}
+      key={id}
     >
       <Animated.Text
         style={[

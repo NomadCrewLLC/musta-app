@@ -6,18 +6,17 @@ import {
 } from "react-native";
 import { Swipeable } from 'react-native-gesture-handler';
 import { TimeItemRightAction } from "./TimeItemRightAction";
-import { SelectedItemProps } from "@/helpers/props.helper";
+import { NotificationTimeProps } from "@/helpers/props.helper";
 
 interface Props {
-  item: SelectedItemProps,
-  isCustom: boolean,
+  item: NotificationTimeProps,
   toggleSwitch: Function,
   removeCustomTime: Function
 }
 
-export function TimeItem({ item, isCustom, toggleSwitch, removeCustomTime }: Props) {
+export function TimeItem({ item, toggleSwitch, removeCustomTime }: Props) {
   const swipeableContent = (
-    <View style={styles.timeItem}>
+    <View style={styles.timeItem} key={item.id}>
       <Text style={styles.timeText}>{item.time}</Text>
       <Switch
         trackColor={{ false: '#767577', true: '#81b0ff' }}
@@ -30,12 +29,13 @@ export function TimeItem({ item, isCustom, toggleSwitch, removeCustomTime }: Pro
     </View>
   );
 
-  if (!isCustom) {
+  if (!item.isCustom) {
     return swipeableContent;
   }
 
   return (
     <Swipeable
+      key={item.id}
       renderRightActions={(progress, dragX) => {
         return <TimeItemRightAction id={item.id} progress={progress} dragX={dragX} removeCustomTime={removeCustomTime} />}}
     >
