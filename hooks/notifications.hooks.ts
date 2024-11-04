@@ -10,13 +10,11 @@ function renderRandomNotification() {
   }
 
 export async function schedulePushNotification(selectedTime: string) {
-    console.log('selectedTime schedulePushNotification', selectedTime);
     const trigger = {
         hour: parseDate(selectedTime).hour,
         minute: parseDate(selectedTime).minute,
         repeats: true,
     }
-    console.log('trigger', trigger);
 
     const id = await Notifications.scheduleNotificationAsync({
       content: {
