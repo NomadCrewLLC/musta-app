@@ -1,5 +1,6 @@
 import * as Notifications from "expo-notifications";
 import data from "@/app/data/phrases.json";
+import { parseDate } from "@/helpers/datetime.helper";
 
 function renderRandomNotification() {
     const randomIndex = Math.floor(Math.random() * data.phrases.length);
@@ -8,13 +9,19 @@ function renderRandomNotification() {
     return `${randomPhrase.phrase} = ${randomPhrase.translation}`;
   }
 
-export async function schedulePushNotification(scheduledHour: number) {
+export async function schedulePushNotification(selectedTime: string) {
+    const trigger = {
+        hour: parseDate(selectedTime).hour,
+        minute: parseDate(selectedTime).minute,
+        repeats: true,
+    }
+
     const id = await Notifications.scheduleNotificationAsync({
       content: {
         title: "Time to learn a new phrase 🤓",
         body: renderRandomNotification(),
       },
-      trigger: { seconds: scheduledHour },
+      trigger,
     });
     return id;
   }
@@ -24,4 +31,14 @@ export async function schedulePushNotification(scheduledHour: number) {
     if (identifier) {
       await Notifications.cancelScheduledNotificationAsync(identifier);
     }
+  }
+
+  export async function forTestingTriggerNotification() {
+    await Notifications.scheduleNotificationAsync({
+        content: {
+          title: "Time to learn a new phrase 🤓",
+          body: renderRandomNotification(),
+        },
+        trigger: {seconds: 3},
+      });
   }

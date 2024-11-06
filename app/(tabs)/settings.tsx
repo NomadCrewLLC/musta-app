@@ -1,24 +1,56 @@
-import React, { useEffect, useState } from "react";
-import { StyleSheet, Image, Switch } from "react-native";
-import ParallaxScrollView from "@/components/ParallaxScrollView";
-import { ThemedText } from "@/components/ThemedText";
-import { ThemedView } from "@/components/ThemedView";
+import React, { useState, useEffect } from "react";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  Platform,
+  Modal,
+} from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { schedulePushNotification, cancelScheduledNotification } from "@/hooks/notifications.hooks"
+import DateTimePicker from "@react-native-community/datetimepicker";
+import { Bell, Plus, X } from "lucide-react";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { TimeItem } from "@/components/TimeItem";
+import { formatTime } from "@/helpers/datetime.helper";
+import {
+  schedulePushNotification,
+  cancelScheduledNotification,
+} from "@/hooks/notifications.hooks";
+import * as Notifications from "expo-notifications";
+import { NotificationTimeProps } from "@/helpers/props.helper";
 
-const STORAGE_KEY = "notification_prefereces";
+// change this before pushing to dev
+const STORAGE_KEY = "test_schedule_preferences";
 
-export default function TabTwoScreen() {
-  const scheduledHourOptions = [3, 5];
-  interface ScheduledTimeConfig {
-    [key: number]: scheduledHourProps;
-  }
-  type scheduledHourProps = {
-    isEnabled: boolean;
-    notificationID: string | null;
-  };
+//Handle incoming notifications when the app is in the foreground
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: false,
+  }),
+});
 
-  const [switchStates, setSwitchStates] = useState<ScheduledTimeConfig>({});
+export function NotificationSettings() {
+  const [notificationTimes, setNotificationTimes] = useState([
+    {
+      id: 1,
+      time: "8:00 AM",
+      isEnabled: false,
+      isCustom: false,
+      notificationID: null,
+    },
+    {
+      id: 2,
+      time: "8:00 PM",
+      isEnabled: false,
+      isCustom: false,
+      notificationID: null,
+    },
+  ]);
+  const [showModal, setShowModal] = useState(false);
+  const [selectedTime, setSelectedTime] = useState(new Date());
   const [loading, setIsLoading] = useState(false);
 
   useEffect(() => {
@@ -31,19 +63,13 @@ export default function TabTwoScreen() {
       const savedPreferences = await AsyncStorage.getItem(STORAGE_KEY);
 
       if (savedPreferences != null) {
-        setSwitchStates(JSON.parse(savedPreferences));
-
+        setNotificationTimes(JSON.parse(savedPreferences));
       } else {
-        // initialized default states if no saved preferences exist
-        const defaultStates = scheduledHourOptions.reduce(
-          (acc, time) => ({
-            ...acc,
-            [time]: { isEnabled: false, notificationID: null },
-          }),
-          {}
+        // if there are no saved preferences, load the default
+        await AsyncStorage.setItem(
+          STORAGE_KEY,
+          JSON.stringify(notificationTimes)
         );
-        setSwitchStates(defaultStates);
-        await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(defaultStates));
       }
     } catch (error) {
       console.error(
@@ -55,98 +81,234 @@ export default function TabTwoScreen() {
     }
   }
 
-  async function toggleSwitch(time: number) {
+  async function toggleSwitch(id: number) {
     try {
-      if (!switchStates[time].isEnabled) {
-        const id = await schedulePushNotification(time);
+      const updatedTimes = await Promise.all(
+        notificationTimes.map(async (notificationTime) => {
+          const newIsEnabledValue = !notificationTime.isEnabled;
 
-        const newSwitchStates = {
-          ...switchStates,
-          [time]: { isEnabled: !switchStates[time].isEnabled, notificationID: id}
-        }
+          if (notificationTime.id === id) {
+            if (newIsEnabledValue) {
+              const formattedTime = formatTime(selectedTime);
+              const notificationID = await schedulePushNotification(formattedTime);
+              return {
+                ...notificationTime,
+                isEnabled: newIsEnabledValue,
+                notificationID: notificationID,
+              };
+            } else {
+              await cancelScheduledNotification(
+                notificationTime.notificationID
+              );
+              return {
+                ...notificationTime,
+                isEnabled: newIsEnabledValue,
+                notificationID: null,
+              };
+            }
+          } else {
+            return notificationTime;
+          }
+        })
+      );
 
-        setSwitchStates(newSwitchStates)
-
-        await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(newSwitchStates));
-
-      } else {
-        await cancelScheduledNotification(switchStates[time].notificationID);
-
-        const newSwitchStates = {
-          ...switchStates,
-          [time]: { isEnabled: !switchStates[time].isEnabled, notificationID: null}        
-        }
-
-        setSwitchStates(newSwitchStates)
-        await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(newSwitchStates));
-      }
+      setNotificationTimes(updatedTimes);
+      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(updatedTimes));
 
     } catch (error) {
       console.log(error);
     }
+  }
 
+  function addCustomTime(time: Date) {
+    if (time) {
+      setSelectedTime(time);
+    }
+  }
+
+  async function confirmTime() {
+    const formattedTime = formatTime(selectedTime);
+    const id = await schedulePushNotification(formattedTime);
+    if (selectedTime) {
+      const newTime = {
+        id: Date.now(),
+        time: formattedTime,
+        isEnabled: true,
+        isCustom: true,
+        notificationID: id,
+      };
+      const listOfNewTimes = [...notificationTimes, newTime];
+      setNotificationTimes(listOfNewTimes);
+      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(listOfNewTimes));
+    }
+    setShowModal(false);
+  }
+
+  async function removeCustomTime(id: number) {
+    setNotificationTimes(
+      notificationTimes.filter((time: NotificationTimeProps) => time.id !== id)
+    );
+    await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(notificationTimes));
   }
 
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: "#A1CEDC", dark: "#1D3D47" }}
-      headerImage={
-        <Image
-          source={require("@/assets/images/partial-react-logo.png")}
-          style={styles.reactLogo}
-        />
-      }
-    >
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Settings</ThemedText>
-      </ThemedView>
-      <ThemedText>
-        Set your preferred notification frequency.
-      </ThemedText>
-      {Object.keys(switchStates).length > 0 &&
-        scheduledHourOptions.map((time) => {
-          return (
-            <ThemedView
-              key={time}
-              style={{
-                display: "flex",
-                flexDirection: "row",
-                justifyContent: "space-between",
-              }}
-            >
-              <ThemedText>Notify me every {time} seconds</ThemedText>
-              <Switch
-                trackColor={{ false: "#767577", true: "#81b0ff" }}
-                thumbColor={
-                  switchStates[time].isEnabled ? "#f5dd4b" : "#f4f3f4"
-                }
-                ios_backgroundColor="#3e3e3e"
-                onValueChange={() => toggleSwitch(time)}
-                value={switchStates[time].isEnabled}
-              />
-            </ThemedView>
-          );
-        })}
-    </ParallaxScrollView>
+    <GestureHandlerRootView style={styles.container}>
+      <View style={styles.header}>
+        <Text>🔔</Text>
+        <Text style={styles.title}>Notification Times</Text>
+      </View>
+
+      <View style={styles.timesList}>
+        {notificationTimes.length > 0 &&
+          notificationTimes.map((time) => (
+            <TimeItem
+              item={time}
+              key={time.id}
+              toggleSwitch={toggleSwitch}
+              removeCustomTime={removeCustomTime}
+            />
+          ))}
+      </View>
+
+      <TouchableOpacity
+        style={styles.addButton}
+        onPress={() => setShowModal(true)}
+      >
+        <Text>➕</Text>
+        <Text style={styles.addButtonText}>Add Time</Text>
+      </TouchableOpacity>
+
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={showModal}
+        onRequestClose={() => setShowModal(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Select Time</Text>
+              <TouchableOpacity
+                onPress={() => setShowModal(false)}
+                style={styles.closeButton}
+              >
+                <Text>❌</Text>
+              </TouchableOpacity>
+            </View>
+            <DateTimePicker
+              value={selectedTime}
+              mode="time"
+              display={Platform.OS === "ios" ? "spinner" : "default"}
+              onChange={(event, date) => addCustomTime(date)}
+              style={styles.timePicker}
+              //   minuteInterval={10}
+            />
+            {Platform.OS === "ios" && (
+              <TouchableOpacity
+                style={styles.confirmButton}
+                onPress={() => confirmTime()}
+              >
+                <Text style={styles.confirmButtonText}>Confirm</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        </View>
+      </Modal>
+
+      <Text style={styles.description}>
+        You'll receive notifications at these times every day to help you stay
+        on track.
+      </Text>
+    </GestureHandlerRootView>
   );
 }
 
 const styles = StyleSheet.create({
-  headerImage: {
-    color: "#808080",
-    bottom: -90,
-    left: -35,
-    position: "absolute",
+  container: {
+    flex: 1,
+    backgroundColor: "#FFFFFF",
   },
-  titleContainer: {
+  header: {
     flexDirection: "row",
-    gap: 8,
+    alignItems: "center",
+    marginTop: 20,
+    marginBottom: 30,
+    paddingHorizontal: 20,
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: "absolute",
+  title: {
+    fontSize: 24,
+    fontWeight: "bold",
+    marginLeft: 10,
+    color: "#000000",
+  },
+  timesList: {
+    marginBottom: 20,
+  },
+  addButton: {
+    flexDirection: "row",
+    backgroundColor: "#007AFF",
+    padding: 15,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+    marginHorizontal: 20,
+    marginBottom: 20,
+  },
+  addButtonText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "600",
+    marginLeft: 8,
+  },
+  description: {
+    fontSize: 14,
+    color: "#666666",
+    textAlign: "center",
+    paddingHorizontal: 20,
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: "flex-end",
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+  },
+  modalContent: {
+    backgroundColor: "#FFFFFF",
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingBottom: Platform.OS === "ios" ? 40 : 20,
+  },
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: "#F0F0F0",
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: "600",
+  },
+  closeButton: {
+    padding: 5,
+  },
+  timePicker: {
+    height: 200,
+    backgroundColor: "red",
+  },
+  confirmButton: {
+    backgroundColor: "#007AFF",
+    marginHorizontal: 20,
+    padding: 15,
+    borderRadius: 10,
+    alignItems: "center",
+    marginTop: 20,
+  },
+  confirmButtonText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "600",
   },
 });
+
+export default NotificationSettings;
