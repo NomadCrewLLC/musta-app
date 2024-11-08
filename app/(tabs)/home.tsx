@@ -1,16 +1,11 @@
-import React, { useState, useEffect, useRef } from "react";
+import React from "react";
 import {
   SafeAreaView,
-  View,
   VirtualizedList,
   StyleSheet,
   Text,
   StatusBar,
 } from "react-native";
-import * as Device from "expo-device";
-import * as Notifications from "expo-notifications";
-import Constants from "expo-constants";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import data from "@/app/data/phrases.json";
 import { FlashCard } from "@/components/FlashCard";
 
@@ -33,6 +28,7 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      <Text>Let’s make your brain a dictionary—one word at a time.</Text>
       <VirtualizedList
         initialNumToRender={4}
         renderItem={({ item }) => (

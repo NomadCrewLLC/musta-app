@@ -64,7 +64,7 @@ export function NotificationSettings() {
     };
   }, []);
 
-  const [notificationTimes, setNotificationTimes] = useState([
+  const [notificationTimes, setNotificationTimes] = useState<NotificationTimeProps[]>([
     {
       id: 1,
       time: "8:00 AM",
@@ -152,12 +152,6 @@ export function NotificationSettings() {
     }
   }
 
-  function addCustomTime(time: Date) {
-    if (time) {
-      setSelectedTime(time);
-    }
-  }
-
   async function confirmTime() {
     const formattedTime = formatTime(selectedTime);
     const id = await schedulePushNotification(formattedTime);
@@ -201,7 +195,6 @@ export function NotificationSettings() {
             />
           ))}
       </View>
-
       <TouchableOpacity
         style={styles.addButton}
         onPress={() => setShowModal(true)}
@@ -246,8 +239,7 @@ export function NotificationSettings() {
       </Modal>
 
       <Text style={styles.description}>
-        Receive daily notifications at these times to support your language
-        learning and keep you on track.
+        Receive daily notifications at these times to support your language learning and keep you on track.
       </Text>
     </GestureHandlerRootView>
   );
