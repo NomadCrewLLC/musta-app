@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -9,7 +9,7 @@ import {
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import DateTimePicker from "@react-native-community/datetimepicker";
-import { Bell, Plus, X } from "lucide-react";
+import { Bell, Plus, X as CloseButton } from "lucide-react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { TimeItem } from "@/components/TimeItem";
 import { formatTime } from "@/helpers/datetime.helper";
@@ -21,8 +21,7 @@ import {
 import * as Notifications from "expo-notifications";
 import { NotificationTimeProps } from "@/helpers/props.helper";
 
-// change this before pushing to dev
-const STORAGE_KEY = "test_schedule_preferences";
+const STORAGE_KEY = "my_schedule_preferences";
 
 //Handle incoming notifications when the app is in the foreground
 Notifications.setNotificationHandler({
@@ -35,33 +34,11 @@ Notifications.setNotificationHandler({
 
 export function NotificationSettings() {
   const [expoPushToken, setExpoPushToken] = useState("");
-  const [notification, setNotification] = useState<Notifications.Notification | undefined>(undefined);
-  const notificationListener = useRef<Notifications.Subscription>();
-  const responseListener = useRef<Notifications.Subscription>();
 
   useEffect(() => {
     registerForPushNotificationsAsync().then(
       (token) => token && setExpoPushToken(token)
     );
-
-    notificationListener.current =
-      Notifications.addNotificationReceivedListener((notification) => {
-        setNotification(notification);
-      });
-
-    responseListener.current =
-      Notifications.addNotificationResponseReceivedListener((response) => {
-        console.log(response);
-      });
-
-    return () => {
-      notificationListener.current &&
-        Notifications.removeNotificationSubscription(
-          notificationListener.current
-        );
-      responseListener.current &&
-        Notifications.removeNotificationSubscription(responseListener.current);
-    };
   }, []);
 
   const [notificationTimes, setNotificationTimes] = useState<NotificationTimeProps[]>([
@@ -180,7 +157,7 @@ export function NotificationSettings() {
   return (
     <GestureHandlerRootView style={styles.container}>
       <View style={styles.header}>
-        <Text>🔔</Text>
+        <Bell color="#000" />
         <Text style={styles.title}>Notification Times</Text>
       </View>
 
@@ -199,7 +176,7 @@ export function NotificationSettings() {
         style={styles.addButton}
         onPress={() => setShowModal(true)}
       >
-        <Text>➕</Text>
+        <Plus color={'#FFF'} />
         <Text style={styles.addButtonText}>Add Time</Text>
       </TouchableOpacity>
 
@@ -217,11 +194,12 @@ export function NotificationSettings() {
                 onPress={() => setShowModal(false)}
                 style={styles.closeButton}
               >
-                <Text>❌</Text>
+                <CloseButton />
               </TouchableOpacity>
             </View>
             <DateTimePicker
               value={selectedTime}
+              textColor="#000"
               mode="time"
               display="spinner"
               onChange={(event, time) => time && setSelectedTime(time)}
@@ -316,7 +294,6 @@ const styles = StyleSheet.create({
   },
   timePicker: {
     height: 200,
-    backgroundColor: "red",
   },
   confirmButton: {
     backgroundColor: "#007AFF",
