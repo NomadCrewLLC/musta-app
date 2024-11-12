@@ -31,6 +31,21 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "555f40cd-17e8-40d1-9636-0ac710a06b33"
+      }
+    },
+    "owner": "nomadcrew",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/555f40cd-17e8-40d1-9636-0ac710a06b33"
     }
   }
 }
