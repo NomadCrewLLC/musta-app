@@ -3,7 +3,7 @@ import * as Device from 'expo-device';
 import Constants from 'expo-constants';
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import data from "@/app/data/phrases.json";
-import { parseDate } from "@/helpers/datetime.helper";
+import { parseTimeIntoObject } from "@/helpers/datetime.helper";
 
 export async function registerForPushNotificationsAsync() {
   let token;
@@ -53,8 +53,8 @@ function renderRandomNotification() {
 
 export async function schedulePushNotification(selectedTime: string) {
   const trigger = {
-    hour: parseDate(selectedTime).hour,
-    minute: parseDate(selectedTime).minute,
+    hour: parseTimeIntoObject(selectedTime).hour,
+    minute: parseTimeIntoObject(selectedTime).minute,
     repeats: true,
   };
 
@@ -82,4 +82,20 @@ export async function forTestingTriggerNotification() {
     },
     trigger: { seconds: 3 },
   });
+}
+
+//for testing purposes
+export async function getAllScheduledNotification() {
+  const allNotifications = await Notifications.getAllScheduledNotificationsAsync()
+  // console.log('allNotifications', allNotifications);
+
+  // const identifierX = allNotifications.find((not) => not.identifier ===  "1d19d0a5-b5ec-4b21-ad85-abe652798dc0")
+  // console.log('identifierX', identifierX);
+
+  return allNotifications;
+}
+
+//for testing purposes
+export async function cancelAllScheduledNotifications() {
+  await Notifications.cancelAllScheduledNotificationsAsync()
 }
