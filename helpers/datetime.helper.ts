@@ -1,18 +1,48 @@
-export function parseDate(timeString: string) {
+function convertTo24HourString(period : string, hoursStr: string) {
+  let hour;
+
+  if (period === "PM" && hoursStr !== "12") {
+    hour = parseInt(hoursStr) + 12;
+  } else if (period === "AM" && hoursStr === "12") {
+    hour = "00";
+  } else {
+    parseInt(hoursStr);
+  }
+
+  return Number(hour)
+}
+
+export function parseTimeIntoString(timeString: string) {
+  //from 11:46 PM returns 23:46 to use for timeString
   const [time, period] = timeString.split(/\s+/);
   const [hoursStr, minuteStr] = time.split(":");
 
-  // Convert to 24-hour format
-  const hour =
-    period === "PM" && hoursStr !== "12"
-      ? parseInt(hoursStr) + 12
-      : period === "AM" && hoursStr === "12"
-      ? 0
-      : parseInt(hoursStr);
+  const hour = convertTo24HourString(period, hoursStr)
 
-  const minute = parseInt(minuteStr);
+  return `${hour}:${minuteStr}`;
+}
 
-  return { hour, minute };
+export function parseTimeIntoObject(timeString: string) {
+  // from 11:46pm returns {hour: 23 minute: 46}
+  const [time, period] = timeString.split(/\s+/);
+  const [hoursStr, minuteStr] = time.split(":");
+
+  return {
+    hour: convertTo24HourString(period, hoursStr),
+    minute: parseInt(minuteStr),
+  };
+}
+
+export function formatToDateObject(timeString: string) {
+  const Hour24TimeStr = parseTimeIntoString(timeString)
+  const date = `2024-11-12T${Hour24TimeStr}:00Z`;
+  const localDateTime = new Date(date);
+
+  const utcDate = new Date(
+    localDateTime.getTime() + localDateTime.getTimezoneOffset() * 60000
+  );
+
+  return utcDate;
 }
 
 export function formatTime(date: Date) {
