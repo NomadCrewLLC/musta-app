@@ -1,19 +1,19 @@
 {
   "phrases": [
     {
-      "phrase": "Magandang araw",
+      "phrase": "Magandáng áraw.",
       "translation": "Good day"
     },
     {
-      "phrase": "Magandang umaga",
+      "phrase": "Magandáng umága.",
       "translation": "Good morning"
     },
     {
-      "phrase": "Magandang hapon",
+      "phrase": "Magandáng hápon",
       "translation": "Good afternoon"
     },
     {
-      "phrase": "Magandang gabi",
+      "phrase": "Magandáng gabi",
       "translation": "Good evening"
     },
     {
@@ -25,12 +25,40 @@
       "translation": "Thank you"
     },
     {
+      "phrase": "Walang anuman",
+      "translation": "You're welcome"
+    },
+    {
       "phrase": "Halika dito",
       "translation": "Come here"
     },
     {
       "phrase": "Maraming salamat",
       "translation": "Thank you very much"
+    },
+    {
+      "phrase": "Anong oras na?",
+      "translation": "What time is it?"
+    },
+    {
+      "phrase": "Punta tayo sa ____",
+      "translation": "Let's go to ____"
+    },
+    {
+      "phrase": "Kumain ka na ba?",
+      "translation": "Have you eaten?"
+    },
+    {
+      "phrase": "Anong gusto mong kainin?",
+      "translation": "What would you like to eat?"
+    },
+    {
+      "phrase": "Gusto ko nito",
+      "translation": "I would like this"
+    },
+    {
+      "phrase": "Ano iyan?",
+      "translation": "What's that?"
     }
   ]
 }
