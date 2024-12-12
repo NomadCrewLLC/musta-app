@@ -51,32 +51,6 @@ function renderRandomNotification() {
   return `${randomPhrase.phrase} = ${randomPhrase.translation}`;
 }
 
-export async function scheduleLocalNotification(selectedTime: string) {
-  const trigger = {
-    type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
-    // hour: parseTimeIntoObject(selectedTime).hour,
-    // minute: parseTimeIntoObject(selectedTime).minute,
-    seconds: 60,
-    repeats: true,
-  };
-  // const trigger = {
-  //   type: Notifications.SchedulableTriggerInputTypes.DAILY,
-  //   hour: parseTimeIntoObject(selectedTime).hour,
-  //   minute: parseTimeIntoObject(selectedTime).minute,
-  //   repeats: true,
-  // };
-  console.log("trigger", trigger);
-
-  const id = await Notifications.scheduleNotificationAsync({
-    content: {
-      title: "Time to learn a new phrase 🤓",
-      body: renderRandomNotification(),
-    },
-    trigger,
-  });
-  return id;
-}
-
 export async function scheduleLocalNotifications(selectedTime: string) {
   const notificationID = parseTimeIntoString(selectedTime)
   const DAYS_TO_SCHEDULE = 30; // Schedule a month's worth of notifications
