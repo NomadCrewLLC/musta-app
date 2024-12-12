@@ -144,14 +144,6 @@ export async function forTestingTriggerNotification() {
 export async function getAllScheduledNotification() {
   const allNotifications = await Notifications.getAllScheduledNotificationsAsync();
 
-  const notificationDateComp = allNotifications.filter((notif) => notif.identifier === "a20c8182-12b4-487e-a9a3-aeadfe1169b16:10 PM")
-  console.log('allNotifications', allNotifications);
-  console.log('[notificationDateComp].trigger.dateComponents', notificationDateComp[0].trigger);
- 
-
-  // const identifierX = allNotifications.find((not) => not.identifier ===  "1d19d0a5-b5ec-4b21-ad85-abe652798dc0")
-  // console.log('identifierX', identifierX);
-
   return allNotifications;
 }
 
