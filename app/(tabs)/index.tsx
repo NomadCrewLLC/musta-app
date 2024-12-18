@@ -6,7 +6,7 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { TimeItem } from "@/components/TimeItem";
 import { formatTime, formatToDateObject } from "@/helpers/datetime.helper";
 import {
-  schedulePushNotification,
+  scheduleLocalNotifications,
   cancelScheduledNotification,
   registerForPushNotificationsAsync,
 } from "@/hooks/notifications.hooks";
@@ -96,7 +96,7 @@ export default function NotificationSettings() {
           if (notificationTime.id === id) {
             if (newIsEnabledValue) {
               const formattedTime = formatTime(selectedTime);
-              const notificationID = await schedulePushNotification(
+              const notificationID = await scheduleLocalNotifications(
                 formattedTime
               );
               return {
@@ -129,7 +129,7 @@ export default function NotificationSettings() {
 
   async function confirmTime() {
     const formattedTime = formatTime(selectedTime);
-    const id = await schedulePushNotification(formattedTime);
+    const id = await scheduleLocalNotifications(formattedTime);
     if (selectedTime) {
       const newTime = {
         id: Date.now(),
@@ -173,7 +173,7 @@ export default function NotificationSettings() {
         selectedSchedule.notificationID || ""
       );
       const formattedTime = formatTime(selectEditTime);
-      const notificationID = await schedulePushNotification(formattedTime);
+      const notificationID = await scheduleLocalNotifications(formattedTime);
 
       const id = selectedSchedule.id;
 

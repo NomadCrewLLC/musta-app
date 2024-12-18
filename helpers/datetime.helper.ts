@@ -52,3 +52,11 @@ export function formatTime(date: Date) {
     hour12: true,
   });
 }
+
+export function formatDate(date: Date) {
+  return new Date(date).toLocaleTimeString([], {
+    year: "numeric",
+    day: "numeric",
+    month: "numeric",
+  });
+}
