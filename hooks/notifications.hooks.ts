@@ -5,6 +5,8 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import data from "@/app/data/phrases.json";
 import { formatDate, parseTimeIntoObject, parseTimeIntoString } from "@/helpers/datetime.helper";
 
+const DAYS_TO_SCHEDULE = 30; // Schedule a month's worth of notifications
+
 export async function registerForPushNotificationsAsync() {
   let token;
 
@@ -53,7 +55,6 @@ function renderRandomNotification() {
 
 export async function scheduleLocalNotifications(selectedTime: string) {
   const notificationID = parseTimeIntoString(selectedTime)
-  const DAYS_TO_SCHEDULE = 30; // Schedule a month's worth of notifications
 
   // Cancel any existing notifications with this ID pattern
   await Notifications.cancelScheduledNotificationAsync(notificationID);
@@ -91,7 +92,6 @@ export async function scheduleLocalNotifications(selectedTime: string) {
 
 // Helper function to cleanup all scheduled notifications
 export async function cleanupNotifications(baseId: string) {
-  const DAYS_TO_SCHEDULE = 30;
   for (let day = 0; day < DAYS_TO_SCHEDULE; day++) {
     const dailyId = `${baseId}-${day}`;
     await Notifications.cancelScheduledNotificationAsync(dailyId);
@@ -104,19 +104,10 @@ export async function cancelScheduledNotification(identifier: string | null) {
   }
 }
 
-export async function forTestingTriggerNotification() {
-  await Notifications.scheduleNotificationAsync({
-    content: {
-      title: "Time to learn a new phrase 🤓",
-      body: renderRandomNotification(),
-    },
-    trigger: { seconds: 3 },
-  });
-}
-
 //for testing purposes
 export async function getAllScheduledNotification() {
   const allNotifications = await Notifications.getAllScheduledNotificationsAsync();
+  console.log('allNotifications', allNotifications);
 
   return allNotifications;
 }
