@@ -3,7 +3,7 @@ import * as Device from "expo-device";
 import Constants from "expo-constants";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import data from "@/app/data/phrases.json";
-import { formatDate, parseTimeIntoObject, parseTimeIntoString } from "@/helpers/datetime.helper";
+import { parseTimeIntoObject, parseTimeIntoString } from "@/helpers/datetime.helper";
 
 const DAYS_TO_SCHEDULE = 30; // Schedule a month's worth of notifications
 
