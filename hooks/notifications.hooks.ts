@@ -56,16 +56,13 @@ function renderRandomNotification() {
 export async function scheduleLocalNotifications(selectedTime: string) {
   const notificationID = parseTimeIntoString(selectedTime)
 
-  // Cancel any existing notifications with this ID pattern
-  await Notifications.cancelScheduledNotificationAsync(notificationID);
-
   // Schedule notifications for the next DAYS_TO_SCHEDULE days
   for (let day = 0; day < DAYS_TO_SCHEDULE; day++) {
     const futureDate = new Date();
     futureDate.setDate(futureDate.getDate() + day);
     
-    const trigger = {
-      type: Notifications.SchedulableTriggerInputTypes.CALENDAR,
+    const trigger: Notifications.CalendarTriggerInput = {
+      type: Notifications.SchedulableTriggerInputTypes.CALENDAR, //change to CALENDAR
       year: futureDate.getFullYear(),
       month: futureDate.getMonth() + 1,
       day: futureDate.getDate(),
@@ -105,9 +102,8 @@ export async function cancelScheduledNotification(identifier: string | null) {
 }
 
 //for testing purposes
-export async function getAllScheduledNotification() {
+export async function getAllScheduledNotifications() {
   const allNotifications = await Notifications.getAllScheduledNotificationsAsync();
-  console.log('allNotifications', allNotifications);
 
   return allNotifications;
 }
@@ -115,4 +111,12 @@ export async function getAllScheduledNotification() {
 //for testing purposes
 export async function cancelAllScheduledNotifications() {
   await Notifications.cancelAllScheduledNotificationsAsync();
+}
+
+export async function getExistingNotifications(notificationID: string | null) {
+  const scheduledNotifications = await getAllScheduledNotifications();
+
+  return scheduledNotifications.filter((notification) =>
+    notification.identifier.startsWith(notificationID ?? "")
+  );
 }

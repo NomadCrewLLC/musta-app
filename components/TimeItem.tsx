@@ -2,7 +2,6 @@ import { Text, View, StyleSheet, Switch } from "react-native";
 import { Swipeable } from "react-native-gesture-handler";
 import { TimeItemRightAction } from "./TimeItemRightAction";
 import { NotificationTimeProps } from "@/helpers/props.helper";
-import { AddEditTimeModal } from "./AddEditTimeModal";
 
 interface Props {
   item: NotificationTimeProps;

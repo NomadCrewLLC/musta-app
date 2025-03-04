@@ -2,6 +2,6 @@ export interface NotificationTimeProps {
   isEnabled: boolean;
   isCustom: boolean;
   id: number;
-  time: string | Date;
+  time: string;
   notificationID: string | null;
 }
