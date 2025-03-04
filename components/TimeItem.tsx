@@ -1,7 +1,7 @@
-import { Text, View, StyleSheet, Switch } from "react-native";
-import { Swipeable } from "react-native-gesture-handler";
-import { TimeItemRightAction } from "./TimeItemRightAction";
-import { NotificationTimeProps } from "@/helpers/props.helper";
+import { Text, View, StyleSheet, Switch } from 'react-native';
+import { Swipeable } from 'react-native-gesture-handler';
+import { TimeItemRightAction } from './TimeItemRightAction';
+import { NotificationTimeProps } from '@/helpers/props.helper';
 
 interface Props {
   item: NotificationTimeProps;
@@ -10,19 +10,14 @@ interface Props {
   editCustomTime: Function;
 }
 
-export function TimeItem({
-  item,
-  toggleSwitch,
-  removeCustomTime,
-  editCustomTime,
-}: Props) {
+export function TimeItem({ item, toggleSwitch, removeCustomTime, editCustomTime }: Props) {
   const timeItemRightActions = [
     {
-      type: "Delete",
+      type: 'Delete',
       function: removeCustomTime,
     },
     {
-      type: "Edit",
+      type: 'Edit',
       function: editCustomTime,
     },
   ];
@@ -31,8 +26,8 @@ export function TimeItem({
     <View style={styles.timeItem} key={item.id}>
       <Text style={styles.timeText}>{item.time}</Text>
       <Switch
-        trackColor={{ false: "#767577", true: "#81b0ff" }}
-        thumbColor={item.isEnabled ? "#007AFF" : "#f4f3f4"}
+        trackColor={{ false: '#767577', true: '#81b0ff' }}
+        thumbColor={item.isEnabled ? '#007AFF' : '#f4f3f4'}
         ios_backgroundColor="#3e3e3e"
         onValueChange={() => toggleSwitch(item.id)}
         value={item.isEnabled}
@@ -58,7 +53,9 @@ export function TimeItem({
                 progress={progress}
                 dragX={dragX}
                 onPressAction={
-                  action.type === "Delete" ? () => removeCustomTime(item.id) : () => editCustomTime(item.id)
+                  action.type === 'Delete'
+                    ? () => removeCustomTime(item.id)
+                    : () => editCustomTime(item.id)
                 }
               />
             );
@@ -73,17 +70,17 @@ export function TimeItem({
 
 const styles = StyleSheet.create({
   timeItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     paddingVertical: 12,
     paddingHorizontal: 20,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
-    borderBottomColor: "#F0F0F0",
+    borderBottomColor: '#F0F0F0',
   },
   timeText: {
     fontSize: 18,
-    color: "#000000",
+    color: '#000000',
   },
 });

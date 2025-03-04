@@ -8,7 +8,6 @@ function convertTo24HourString(period: string, hoursStr: string): number {
   } else {
     return parseInt(hoursStr);
   }
-
 }
 
 // 11:46 PM returns 23:46

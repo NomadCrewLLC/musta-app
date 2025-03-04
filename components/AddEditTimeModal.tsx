@@ -6,21 +6,29 @@ import {
   Platform,
   TouchableOpacity,
   NativeSyntheticEvent,
-} from "react-native";
-import { X as CloseButton } from "lucide-react-native";
-import RNDateTimePicker, { DateTimePickerEvent } from "@react-native-community/datetimepicker";
+} from 'react-native';
+import { X as CloseButton } from 'lucide-react-native';
+import RNDateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 
 type AddEditTimeModalProps = {
-  title: string,
-  value: string | Date,
-  visible: boolean,
+  title: string;
+  value: string | Date;
+  visible: boolean;
   onRequestClose: ((event: NativeSyntheticEvent<any>) => void) | undefined;
   onClose: ((event: NativeSyntheticEvent<any>) => void) | undefined;
   onConfirm: ((event: NativeSyntheticEvent<any>) => void) | undefined;
   onChangeTime: (event: DateTimePickerEvent, date?: Date) => void;
 };
 
-export function AddEditTimeModal({ title, value, visible, onRequestClose, onClose, onChangeTime, onConfirm }: AddEditTimeModalProps) {
+export function AddEditTimeModal({
+  title,
+  value,
+  visible,
+  onRequestClose,
+  onClose,
+  onChangeTime,
+  onConfirm,
+}: AddEditTimeModalProps) {
   return (
     <Modal
       animationType="slide"
