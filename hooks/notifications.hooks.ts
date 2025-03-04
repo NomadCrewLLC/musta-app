@@ -62,7 +62,7 @@ export async function scheduleLocalNotifications(selectedTime: string) {
     futureDate.setDate(futureDate.getDate() + day);
     
     const trigger: Notifications.CalendarTriggerInput = {
-      type: Notifications.SchedulableTriggerInputTypes.CALENDAR, //change to CALENDAR
+      type: Notifications.SchedulableTriggerInputTypes.CALENDAR,
       year: futureDate.getFullYear(),
       month: futureDate.getMonth() + 1,
       day: futureDate.getDate(),
@@ -101,7 +101,6 @@ export async function cancelScheduledNotification(identifier: string | null) {
   }
 }
 
-//for testing purposes
 export async function getAllScheduledNotifications() {
   const allNotifications = await Notifications.getAllScheduledNotificationsAsync();
 

@@ -28,7 +28,6 @@ Notifications.setNotificationHandler({
 });
 
 export default function NotificationSettings() {
-  // const [expoPushToken, setExpoPushToken] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedTime, setSelectedTime] = useState<Date>(new Date());
@@ -40,10 +39,9 @@ export default function NotificationSettings() {
     { id: 2, time: '8:00 PM', isEnabled: false, isCustom: false, notificationID: null },
   ]);
 
-  // useEffect(() => {
-  //   registerForPushNotificationsAsync()
-  //   .then((token) => token && setExpoPushToken(token));
-  // }, []);
+  useEffect(() => {
+    registerForPushNotificationsAsync()
+  }, []);
 
   useEffect(() => {
     loadSavedPreferences();
@@ -73,26 +71,25 @@ export default function NotificationSettings() {
     }
   }
 
+  async function checkAndRescheduleNotifications(notificationTimes: NotificationTimeProps[]) {
+    await Promise.all(
+      notificationTimes
+        .filter((schedule) => schedule.isEnabled)
+        .map(async (reminder) => {
+          const existingNotifications = await getExistingNotifications(reminder.notificationID);
 
-async function checkAndRescheduleNotifications(notificationTimes: NotificationTimeProps[]) {
-  await Promise.all(
-    notificationTimes
-      .filter((schedule) => schedule.isEnabled) 
-      .map(async (reminder) => {
-        const existingNotifications = await getExistingNotifications(reminder.notificationID);
-
-        if (existingNotifications.length < 2) {
-          await Promise.all(
-            existingNotifications.map((notification) =>
-              cancelScheduledNotification(notification.identifier)
-            )
-          );
-          await scheduleLocalNotifications(reminder.time);
-          showNotificationsRenewedToast(reminder.time);
-        }
-      })
-  );
-}
+          if (existingNotifications.length < 2) {
+            await Promise.all(
+              existingNotifications.map((notification) =>
+                cancelScheduledNotification(notification.identifier)
+              )
+            );
+            await scheduleLocalNotifications(reminder.time);
+            showNotificationsRenewedToast(reminder.time);
+          }
+        })
+    );
+  }
 
   async function toggleSwitch(id: number) {
     try {
@@ -126,7 +123,6 @@ async function checkAndRescheduleNotifications(notificationTimes: NotificationTi
           }
         })
       );
-
       setNotificationTimes(updatedTimes);
       await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(updatedTimes));
     } catch (error) {
@@ -196,7 +192,7 @@ async function checkAndRescheduleNotifications(notificationTimes: NotificationTi
   }
 
   function onChangeTime(time: Date) {
-    setSelectedTime(time); 
+    setSelectedTime(time);
   }
 
   function onChangeEditTime(time: Date) {
