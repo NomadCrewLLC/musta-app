@@ -1,20 +1,22 @@
-import React, { useState, useEffect } from "react";
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Bell, Plus, X as CloseButton, User } from "lucide-react-native";
-import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { TimeItem } from "@/components/TimeItem";
-import { formatTime, formatToDateObject } from "@/helpers/datetime.helper";
+import React, { useState, useEffect } from 'react';
+import { SafeAreaView, View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Bell, Plus, X as CloseButton } from 'lucide-react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import Toast from 'react-native-toast-message';
+import { TimeItem } from '@/components/TimeItem';
+import { formatTime, formatToDateObject, parseTimeIntoString } from '@/helpers/datetime.helper';
 import {
   scheduleLocalNotifications,
   cancelScheduledNotification,
   registerForPushNotificationsAsync,
-} from "@/hooks/notifications.hooks";
-import * as Notifications from "expo-notifications";
-import { NotificationTimeProps } from "@/helpers/props.helper";
-import { AddEditTimeModal } from "@/components/AddEditTimeModal";
+  getExistingNotifications,
+} from '@/hooks/notifications.hooks';
+import * as Notifications from 'expo-notifications';
+import { NotificationTimeProps } from '@/helpers/props.helper';
+import { AddEditTimeModal } from '@/components/AddEditTimeModal';
 
-const STORAGE_KEY = "my_schedule_preferences";
+const STORAGE_KEY = 'my_schedule_preferences';
 
 //Handle incoming notifications when the app is in the foreground
 Notifications.setNotificationHandler({
@@ -26,37 +28,19 @@ Notifications.setNotificationHandler({
 });
 
 export default function NotificationSettings() {
-  const [expoPushToken, setExpoPushToken] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedTime, setSelectedTime] = useState<Date>(new Date());
-  const [selectedSchedule, setSelectedSchedule] =
-    useState<NotificationTimeProps | null>(null);
+  const [selectedSchedule, setSelectedSchedule] = useState<NotificationTimeProps | null>(null);
   const [selectEditTime, setSelectEditTime] = useState<Date>(new Date());
   const [loading, setIsLoading] = useState(false);
-  const [notificationTimes, setNotificationTimes] = useState<
-    NotificationTimeProps[]
-  >([
-    {
-      id: 1,
-      time: "8:00 AM",
-      isEnabled: false,
-      isCustom: false,
-      notificationID: null,
-    },
-    {
-      id: 2,
-      time: "8:00 PM",
-      isEnabled: false,
-      isCustom: false,
-      notificationID: null,
-    },
+  const [notificationTimes, setNotificationTimes] = useState<NotificationTimeProps[]>([
+    { id: 1, time: '8:00 AM', isEnabled: false, isCustom: false, notificationID: null },
+    { id: 2, time: '8:00 PM', isEnabled: false, isCustom: false, notificationID: null },
   ]);
 
   useEffect(() => {
-    registerForPushNotificationsAsync().then(
-      (token) => token && setExpoPushToken(token)
-    );
+    registerForPushNotificationsAsync()
   }, []);
 
   useEffect(() => {
@@ -69,57 +53,76 @@ export default function NotificationSettings() {
       const savedPreferences = await AsyncStorage.getItem(STORAGE_KEY);
 
       if (savedPreferences != null) {
-        setNotificationTimes(JSON.parse(savedPreferences));
+        const parsedPreferences = JSON.parse(savedPreferences);
+        setNotificationTimes(parsedPreferences);
+        await checkAndRescheduleNotifications(parsedPreferences);
       } else {
         // if there are no saved preferences, load the default
-        await AsyncStorage.setItem(
-          STORAGE_KEY,
-          JSON.stringify(notificationTimes)
-        );
+        await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(notificationTimes));
+        await checkAndRescheduleNotifications(notificationTimes);
       }
     } catch (error) {
       console.error(
-        "Error loading preferences:",
-        error instanceof Error ? error.message : "Unknown error"
+        'Error loading preferences:',
+        error instanceof Error ? error.message : 'Unknown error'
       );
     } finally {
       setIsLoading(false);
     }
   }
 
+  async function checkAndRescheduleNotifications(notificationTimes: NotificationTimeProps[]) {
+    await Promise.all(
+      notificationTimes
+        .filter((schedule) => schedule.isEnabled)
+        .map(async (reminder) => {
+          const existingNotifications = await getExistingNotifications(reminder.notificationID);
+
+          if (existingNotifications.length < 2) {
+            await Promise.all(
+              existingNotifications.map((notification) =>
+                cancelScheduledNotification(notification.identifier)
+              )
+            );
+            await scheduleLocalNotifications(reminder.time);
+            showNotificationsRenewedToast(reminder.time);
+          }
+        })
+    );
+  }
+
   async function toggleSwitch(id: number) {
     try {
       const updatedTimes = await Promise.all(
-        notificationTimes.map(async (notificationTime) => {
-          const newIsEnabledValue = !notificationTime.isEnabled;
+        notificationTimes.map(async (reminder) => {
+          const newIsEnabledValue = !reminder.isEnabled;
 
-          if (notificationTime.id === id) {
+          if (reminder.id === id) {
             if (newIsEnabledValue) {
-              const formattedTime = formatTime(selectedTime);
-              const notificationID = await scheduleLocalNotifications(
-                formattedTime
-              );
+              await scheduleLocalNotifications(reminder.time);
+              showNotificationsSetToast(reminder.time);
               return {
-                ...notificationTime,
+                ...reminder,
                 isEnabled: newIsEnabledValue,
-                notificationID: notificationID,
+                notificationID: parseTimeIntoString(reminder.time),
               };
             } else {
-              await cancelScheduledNotification(
-                notificationTime.notificationID
-              );
+              const existingNotifications = await getExistingNotifications(reminder.notificationID);
+              for (const notification of existingNotifications) {
+                cancelScheduledNotification(notification.identifier);
+              }
+
               return {
-                ...notificationTime,
+                ...reminder,
                 isEnabled: newIsEnabledValue,
                 notificationID: null,
               };
             }
           } else {
-            return notificationTime;
+            return reminder;
           }
         })
       );
-
       setNotificationTimes(updatedTimes);
       await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(updatedTimes));
     } catch (error) {
@@ -143,6 +146,7 @@ export default function NotificationSettings() {
       await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(listOfNewTimes));
     }
     setShowModal(false);
+    showNotificationsSetToast(formattedTime);
   }
 
   function addCustomTime() {
@@ -156,11 +160,7 @@ export default function NotificationSettings() {
     // set the time the same as the selectedSchedule.time
     if (schedule) {
       setSelectedSchedule(schedule);
-      const utcDate = formatToDateObject(
-        schedule.time instanceof Date
-          ? schedule.time.toISOString()
-          : schedule.time
-      );
+      const utcDate = formatToDateObject(schedule.time);
 
       setSelectedTime(utcDate);
       setShowEditModal(true);
@@ -169,13 +169,9 @@ export default function NotificationSettings() {
 
   async function confirmEditTime() {
     if (selectEditTime && selectedSchedule) {
-      await Notifications.cancelScheduledNotificationAsync(
-        selectedSchedule.notificationID || ""
-      );
+      await Notifications.cancelScheduledNotificationAsync(selectedSchedule.notificationID || '');
       const formattedTime = formatTime(selectEditTime);
       const notificationID = await scheduleLocalNotifications(formattedTime);
-
-      const id = selectedSchedule.id;
 
       const updatedSchedule = {
         ...selectedSchedule,
@@ -189,10 +185,7 @@ export default function NotificationSettings() {
       );
 
       setNotificationTimes(newNotificationTimes);
-      await AsyncStorage.setItem(
-        STORAGE_KEY,
-        JSON.stringify(newNotificationTimes)
-      );
+      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(newNotificationTimes));
     }
 
     setShowEditModal(false);
@@ -207,9 +200,7 @@ export default function NotificationSettings() {
   }
 
   async function removeCustomTime(id: number) {
-    setNotificationTimes(
-      notificationTimes.filter((time: NotificationTimeProps) => time.id !== id)
-    );
+    setNotificationTimes(notificationTimes.filter((time: NotificationTimeProps) => time.id !== id));
     await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(notificationTimes));
   }
 
@@ -225,41 +216,59 @@ export default function NotificationSettings() {
     ));
   }
 
+  function showNotificationsRenewedToast(time: string) {
+    Toast.show({
+      type: 'info',
+      text1: 'Notifications Renewed',
+      text2: `Daily notifications renewed at ${time}.`,
+    });
+  }
+
+  function showNotificationsSetToast(time: string) {
+    Toast.show({
+      type: 'success',
+      text1: 'Notifications Set',
+      text2: `Daily notifications scheduled for ${time}.`,
+    });
+  }
+
   return (
     <GestureHandlerRootView style={styles.container}>
-      <View style={styles.header}>
-        <Bell color="#000" />
-        <Text style={styles.title}>Notification Times</Text>
-      </View>
-      <View style={styles.timesList}>
-        {notificationTimes.length > 0 && renderNotificationTimes()}
-      </View>
-      <TouchableOpacity style={styles.addButton} onPress={addCustomTime}>
-        <Plus color={"#FFF"} />
-        <Text style={styles.addButtonText}>Add Time</Text>
-      </TouchableOpacity>
-      <AddEditTimeModal
-        title="Add Time"
-        value={selectedTime}
-        visible={showModal}
-        onRequestClose={() => setShowModal(false)}
-        onClose={() => setShowModal(false)}
-        onChangeTime={(event, time) => onChangeTime(time)}
-        onConfirm={() => confirmTime()}
-      />
-      <AddEditTimeModal
-        title="Edit Time"
-        value={selectedTime}
-        visible={showEditModal}
-        onRequestClose={() => setShowEditModal(false)}
-        onClose={() => setShowEditModal(false)}
-        onChangeTime={(event, time) => onChangeEditTime(time)}
-        onConfirm={confirmEditTime}
-      />
-      <Text style={styles.description}>
-        Receive daily notifications at these times to support your language
-        learning and keep you on track.
-      </Text>
+      <SafeAreaView style={{ flex: 1, paddingTop: 24 }}>
+        <Toast />
+        <View style={styles.header}>
+          <Bell color="#000" />
+          <Text style={styles.title}>Notification Times</Text>
+        </View>
+        <View style={styles.timesList}>
+          {notificationTimes.length > 0 && renderNotificationTimes()}
+        </View>
+        <TouchableOpacity style={styles.addButton} onPress={addCustomTime}>
+          <Plus color={'#FFF'} />
+          <Text style={styles.addButtonText}>Add Time</Text>
+        </TouchableOpacity>
+        <AddEditTimeModal
+          title="Add Time"
+          value={selectedTime}
+          visible={showModal}
+          onRequestClose={() => setShowModal(false)}
+          onClose={() => setShowModal(false)}
+          onChangeTime={(event, time) => onChangeTime(time)}
+          onConfirm={() => confirmTime()}
+        />
+        <AddEditTimeModal
+          title="Edit Time"
+          value={selectedTime}
+          visible={showEditModal}
+          onRequestClose={() => setShowEditModal(false)}
+          onClose={() => setShowEditModal(false)}
+          onChangeTime={(event, time) => onChangeEditTime(time)}
+          onConfirm={confirmEditTime}
+        />
+        <Text style={styles.description}>
+          Receive daily notifications at these times to keep you on track.
+        </Text>
+      </SafeAreaView>
     </GestureHandlerRootView>
   );
 }
@@ -267,44 +276,44 @@ export default function NotificationSettings() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: '#FFFFFF',
   },
   header: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     marginTop: 20,
     marginBottom: 30,
     paddingHorizontal: 20,
   },
   title: {
     fontSize: 24,
-    fontWeight: "bold",
+    fontWeight: 'bold',
     marginLeft: 10,
-    color: "#000000",
+    color: '#000000',
   },
   timesList: {
     marginBottom: 20,
   },
   addButton: {
-    flexDirection: "row",
-    backgroundColor: "#007AFF",
+    flexDirection: 'row',
+    backgroundColor: '#007AFF',
     padding: 15,
     borderRadius: 10,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
     marginHorizontal: 20,
     marginBottom: 20,
   },
   addButtonText: {
-    color: "#FFFFFF",
+    color: '#FFFFFF',
     fontSize: 16,
-    fontWeight: "600",
+    fontWeight: '600',
     marginLeft: 8,
   },
   description: {
     fontSize: 14,
-    color: "#666666",
-    textAlign: "center",
+    color: '#666666',
+    textAlign: 'center',
     paddingHorizontal: 20,
   },
 });

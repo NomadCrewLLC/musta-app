@@ -17,8 +17,8 @@
       "translation": "Good evening"
     },
     {
-      "phrase": "Hello",
-      "translation": "Kamusta"
+      "phrase": "Kamusta",
+      "translation": "Hello"
     },
     {
       "phrase": "Salamat",
@@ -59,6 +59,10 @@
     {
       "phrase": "Ano iyan?",
       "translation": "What's that?"
+    },
+    {
+      "phrase": "Sana all!",
+      "translation": "I wish I had that, too!"
     }
   ]
 }

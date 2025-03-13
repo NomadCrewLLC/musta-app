@@ -1,4 +1,4 @@
-import { StyleSheet, TouchableOpacity, Animated } from "react-native";
+import { StyleSheet, TouchableOpacity, Animated } from 'react-native';
 
 interface Props {
   actionType: string;
@@ -8,24 +8,18 @@ interface Props {
   onPressAction: Function;
 }
 
-export function TimeItemRightAction({
-  actionType,
-  id,
-  progress,
-  dragX,
-  onPressAction,
-}: Props) {
+export function TimeItemRightAction({ actionType, id, progress, dragX, onPressAction }: Props) {
   const scale = dragX.interpolate({
     inputRange: [-100, 0],
     outputRange: [1, 0],
-    extrapolate: "clamp",
+    extrapolate: 'clamp',
   });
 
   return (
     <TouchableOpacity
       style={{
         ...styles.action,
-        backgroundColor: actionType === "Delete" ? "#FF3B30" : "#007AFF",
+        backgroundColor: actionType === 'Delete' ? '#FF3B30' : '#007AFF',
       }}
       onPress={() => onPressAction(id)}
       key={actionType}
@@ -39,14 +33,14 @@ export function TimeItemRightAction({
 
 const styles = StyleSheet.create({
   action: {
-    justifyContent: "center",
-    alignItems: "flex-end",
+    justifyContent: 'center',
+    alignItems: 'flex-end',
     paddingHorizontal: 30,
-    height: "100%",
+    height: '100%',
   },
   actionText: {
-    color: "#FFFFFF",
-    fontWeight: "600",
+    color: '#FFFFFF',
+    fontWeight: '600',
     fontSize: 16,
   },
 });
