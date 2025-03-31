@@ -235,7 +235,7 @@ export default function NotificationSettings() {
   return (
     <GestureHandlerRootView style={styles.container}>
       <SafeAreaView style={{ flex: 1, paddingTop: 24 }}>
-        <Toast />
+        <Toast position='bottom' />
         <View style={styles.header}>
           <Bell color="#000" />
           <Text style={styles.title}>Notification Times</Text>
@@ -276,12 +276,11 @@ export default function NotificationSettings() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 20,
+    marginTop: 40,
     marginBottom: 30,
     paddingHorizontal: 20,
   },
