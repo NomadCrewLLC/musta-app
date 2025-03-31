@@ -14,13 +14,15 @@
     },
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.nomadcrew.mustaapp"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/musta.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "package": "com.nomadcrew.mustaapp"
     },
     "web": {
       "bundler": "metro",
