@@ -5,7 +5,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import data from '@/app/data/phrases.json';
 import { parseTimeIntoObject, parseTimeIntoString } from '@/helpers/datetime.helper';
 
-const DAYS_TO_SCHEDULE = 30; // Schedule a month's worth of notifications
+const DAYS_TO_SCHEDULE = 15; // Schedule two weeks's worth of notifications
+const MAX_NOTIFICATIONS = 64;
 
 export async function registerForPushNotificationsAsync() {
   let token;
@@ -111,7 +112,10 @@ export async function cancelAllScheduledNotifications() {
 export async function getExistingNotifications(notificationID: string | null) {
   const scheduledNotifications = await getAllScheduledNotifications();
 
-  return scheduledNotifications.filter((notification) =>
-    notification.identifier.startsWith(notificationID ?? '')
-  );
+  const filtered = scheduledNotifications.filter((notification) => {
+    const matches = notification.identifier.includes(notificationID ?? '');
+    return matches;
+  });
+
+  return filtered;
 }

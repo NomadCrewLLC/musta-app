@@ -11,6 +11,7 @@ import {
   cancelScheduledNotification,
   registerForPushNotificationsAsync,
   getExistingNotifications,
+  getAllScheduledNotifications,
 } from '@/hooks/notifications.hooks';
 import * as Notifications from 'expo-notifications';
 import { NotificationTimeProps } from '@/helpers/props.helper';
@@ -38,9 +39,10 @@ export default function NotificationSettings() {
     { id: 1, time: '8:00 AM', isEnabled: false, isCustom: false, notificationID: null },
     { id: 2, time: '8:00 PM', isEnabled: false, isCustom: false, notificationID: null },
   ]);
+  const [isLimitReached, setIsLimitReached] = useState(false);
 
   useEffect(() => {
-    registerForPushNotificationsAsync()
+    registerForPushNotificationsAsync();
   }, []);
 
   useEffect(() => {
@@ -56,6 +58,7 @@ export default function NotificationSettings() {
         const parsedPreferences = JSON.parse(savedPreferences);
         setNotificationTimes(parsedPreferences);
         await checkAndRescheduleNotifications(parsedPreferences);
+        await checkNotificationLimit();
       } else {
         // if there are no saved preferences, load the default
         await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(notificationTimes));
@@ -71,25 +74,33 @@ export default function NotificationSettings() {
     }
   }
 
-  async function checkAndRescheduleNotifications(notificationTimes: NotificationTimeProps[]) {
-    await Promise.all(
-      notificationTimes
-        .filter((schedule) => schedule.isEnabled)
-        .map(async (reminder) => {
-          const existingNotifications = await getExistingNotifications(reminder.notificationID);
+  async function checkNotificationLimit() {
+    const allNotifications = await getAllScheduledNotifications();
+    const notificationCount = allNotifications.length;
+    const MAX_NOTIFICATIONS = 64; // iOS limit
 
-          if (existingNotifications.length < 2) {
-            await Promise.all(
-              existingNotifications.map((notification) =>
-                cancelScheduledNotification(notification.identifier)
-              )
-            );
-            await scheduleLocalNotifications(reminder.time);
-            showNotificationsRenewedToast(reminder.time);
-          }
-        })
-    );
+    console.log(`Current notification count: ${notificationCount}/${MAX_NOTIFICATIONS}`);
+    setIsLimitReached(notificationCount >= MAX_NOTIFICATIONS);
+
+    return notificationCount;
   }
+
+  async function checkAndRescheduleNotifications(notificationTimes: NotificationTimeProps[]) {
+    for (const schedule of notificationTimes.filter((s) => s.isEnabled)) {
+      const existingNotifications = await getExistingNotifications(schedule.notificationID);
+
+      if (existingNotifications.length < 2) {
+        await Promise.all(
+          existingNotifications.map((notification) =>
+            cancelScheduledNotification(notification.identifier)
+          )
+        );
+      }
+      await scheduleLocalNotifications(schedule.time);
+      showNotificationsRenewedToast(schedule.time);
+    }
+  }
+  console.log('isLimitReached', isLimitReached);
 
   async function toggleSwitch(id: number) {
     try {
@@ -125,6 +136,7 @@ export default function NotificationSettings() {
       );
       setNotificationTimes(updatedTimes);
       await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(updatedTimes));
+      await checkNotificationLimit();
     } catch (error) {
       console.log(error);
     }
@@ -144,6 +156,7 @@ export default function NotificationSettings() {
       const listOfNewTimes = [...notificationTimes, newTime];
       setNotificationTimes(listOfNewTimes);
       await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(listOfNewTimes));
+      await checkNotificationLimit();
     }
     setShowModal(false);
     showNotificationsSetToast(formattedTime);
@@ -202,6 +215,7 @@ export default function NotificationSettings() {
   async function removeCustomTime(id: number) {
     setNotificationTimes(notificationTimes.filter((time: NotificationTimeProps) => time.id !== id));
     await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(notificationTimes));
+    await checkNotificationLimit();
   }
 
   function renderNotificationTimes() {
@@ -235,7 +249,7 @@ export default function NotificationSettings() {
   return (
     <GestureHandlerRootView style={styles.container}>
       <SafeAreaView style={{ flex: 1, paddingTop: 24 }}>
-        <Toast position='bottom' />
+        <Toast position="bottom" />
         <View style={styles.header}>
           <Bell color="#000" />
           <Text style={styles.title}>Notification Times</Text>
@@ -243,9 +257,15 @@ export default function NotificationSettings() {
         <View style={styles.timesList}>
           {notificationTimes.length > 0 && renderNotificationTimes()}
         </View>
-        <TouchableOpacity style={styles.addButton} onPress={addCustomTime}>
-          <Plus color={'#FFF'} />
-          <Text style={styles.addButtonText}>Add Time</Text>
+        <TouchableOpacity
+          style={[styles.addButton, isLimitReached && styles.disabledButton]}
+          onPress={addCustomTime}
+          disabled={isLimitReached}
+        >
+          <Plus color={isLimitReached ? '#999' : '#FFF'} />
+          <Text style={[styles.addButtonText, isLimitReached && styles.disabledButtonText]}>
+            {isLimitReached ? 'Notification Limit Reached' : 'Add Time'}
+          </Text>
         </TouchableOpacity>
         <AddEditTimeModal
           title="Add Time"
@@ -265,9 +285,17 @@ export default function NotificationSettings() {
           onChangeTime={(event, time) => onChangeEditTime(time)}
           onConfirm={confirmEditTime}
         />
-        <Text style={styles.description}>
-          Receive daily notifications at these times to keep you on track.
-        </Text>
+        {!isLimitReached && (
+          <Text style={styles.description}>
+            Receive daily notifications at these times to keep you on track.
+          </Text>
+        )}
+        {isLimitReached && (
+          <Text style={styles.description}>
+            You've reached the notification limit. No more scheduled notifications can be created
+            until you remove or disable some existing ones.
+          </Text>
+        )}
       </SafeAreaView>
     </GestureHandlerRootView>
   );
@@ -314,5 +342,12 @@ const styles = StyleSheet.create({
     color: '#666666',
     textAlign: 'center',
     paddingHorizontal: 20,
+  },
+  disabledButton: {
+    backgroundColor: '#cccccc',
+    opacity: 0.7,
+  },
+  disabledButtonText: {
+    color: '#999999',
   },
 });
