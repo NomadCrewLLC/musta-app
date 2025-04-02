@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { SafeAreaView, StyleSheet } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import Toast, { BaseToast, BaseToastProps } from 'react-native-toast-message';
+import Toast from 'react-native-toast-message';
 import { formatTime, formatToDateObject, parseTimeIntoString } from '@/helpers/datetime.helper';
 import {
   scheduleLocalNotifications,
