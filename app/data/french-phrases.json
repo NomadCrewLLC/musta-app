@@ -1,0 +1,48 @@
+{
+  "phrases": [
+    {
+      "phrase": "Tu as un passe-temps?",
+      "translation": "Do you have a hobby?"
+    },
+    {
+      "phrase": "Tu aimes l’art?",
+      "translation": "Do you like art?"
+    },
+    {
+      "phrase": "un, deux trois, quatre, cinq",
+      "translation": "uhn, deuh, twah, kat, sank"
+    },
+    {
+      "phrase": "six, sept, huit, neuf, dix",
+      "translation": "seess, set, weet, neuhf, deess"
+    },
+    {
+      "phrase": "T’es d’où",
+      "translation": "Where are you from? /tay doo/"
+    },
+    {
+      "phrase": "Peut-être",
+      "translation": "Maybe /puh tetr/"
+    },
+    {
+      "phrase": "Tout le temps/tous les jours",
+      "translation": "All the time/every day. /too luh ton/too lay jour"
+    },
+    {
+      "phrase": "Jamais",
+      "translation": "Never"
+    },
+    {
+      "phrase": "Amuse-toi bien",
+      "translation": "Have fun"
+    },
+    {
+      "phrase": "Il fait beau aujourd'hui",
+      "translation": "The weather is fine today."
+    },
+    {
+      "phrase": "Est-ce que tu veux encore du gateau?",
+      "translation": "Do you want more cake?"
+    }
+  ]
+}
