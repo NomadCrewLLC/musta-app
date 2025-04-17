@@ -43,6 +43,10 @@
     {
       "phrase": "Est-ce que tu veux encore du gateau?",
       "translation": "Do you want more cake?"
+    },
+    {
+      "phrase": "Tu es encore au travail?",
+      "translation": "Are you still work?"
     }
   ]
 }
