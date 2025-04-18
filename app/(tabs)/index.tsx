@@ -1,277 +1,257 @@
 import React, { useState, useEffect } from 'react';
-import { SafeAreaView, StyleSheet } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import Toast from 'react-native-toast-message';
-import { formatTime, formatToDateObject, parseTimeIntoString } from '@/helpers/datetime.helper';
 import {
-  scheduleLocalNotifications,
-  cancelScheduledNotification,
-  registerForPushNotificationsAsync,
-  getExistingNotifications,
-  getAllScheduledNotifications,
-} from '@/hooks/notifications.hooks';
-import * as Notifications from 'expo-notifications';
-import { NotificationTimeProps } from '@/helpers/props.helper';
-import { AddEditTimeModal } from '@/components/AddEditTimeModal';
-import { NotificationHeader } from '@/components/NotificationHeader';
-import { AddTimeButton } from '@/components/AddTimeButton';
-import { NotificationTimesList } from '@/components/NotificationTimesList';
-import { NotificationButtonDescription } from '@/components/NotificationButtonDescription';
+  StyleSheet,
+  View,
+  Text,
+  TouchableOpacity,
+  SafeAreaView,
+  FlatList,
+  StatusBar,
+  Dimensions,
+  Platform,
+} from 'react-native';
+import languages from '@/app/data/languages.json';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { router } from 'expo-router';
+import data from '@/app/data/phrase.json';
 
-const STORAGE_KEY = 'my_schedule_preferences';
+const languageSelection = languages.selection;
 
-//Handle incoming notifications when the app is in the foreground
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: false,
-  }),
-});
+export default function LanguageScreen() {
+  const [selectedLanguage, setSelectedLanguage] = useState(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+  const [dimensions, setDimensions] = useState(Dimensions.get('window'));
+  console.log('selectedLanguage', selectedLanguage);
 
-export default function NotificationSettings() {
-  const [showModal, setShowModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [selectedTime, setSelectedTime] = useState<Date>(new Date());
-  const [selectedSchedule, setSelectedSchedule] = useState<NotificationTimeProps | null>(null);
-  const [selectEditTime, setSelectEditTime] = useState<Date>(new Date());
-  const [loading, setIsLoading] = useState(false);
-  const [notificationTimes, setNotificationTimes] = useState<NotificationTimeProps[]>([
-    { id: 1, time: '8:00 AM', isEnabled: false, isCustom: false, notificationID: null },
-    { id: 2, time: '8:00 PM', isEnabled: false, isCustom: false, notificationID: null },
-  ]);
-  const [isLimitReached, setIsLimitReached] = useState(false);
-
+  // Add orientation change listener
   useEffect(() => {
-    registerForPushNotificationsAsync();
+    const onChange = ({ window }) => {
+      setDimensions(window);
+    };
+
+    Dimensions.addEventListener('change', onChange);
+
+    return () => {
+      // Clean up event listener
+      if (Platform.OS === 'android') {
+        // For older React Native versions
+        Dimensions.removeEventListener('change', onChange);
+      }
+    };
   }, []);
 
   useEffect(() => {
-    loadSavedPreferences();
-  }, []);
+    console.log('storedLanguageId is changed');
+    getLanguage();
+  }, [selectedLanguage]);
 
-  async function loadSavedPreferences() {
+  async function getLanguage() {
     try {
       setIsLoading(true);
-      const savedPreferences = await AsyncStorage.getItem(STORAGE_KEY);
 
-      if (savedPreferences != null) {
-        const parsedPreferences = JSON.parse(savedPreferences);
-        setNotificationTimes(parsedPreferences);
-        await checkAndRescheduleNotifications(parsedPreferences);
-        await checkNotificationLimit();
+      // Get the stored language ID
+      const storedLanguage = await AsyncStorage.getItem('language');
+      console.log('storedLanguage getLanguage', storedLanguage);
+
+      // Find the language in our data
+      if (data.languages) {
+        const filteredLanguage = data.languages.find(
+          (language) => language.id === (storedLanguage ? JSON.parse(storedLanguage) : null)
+        );
+        console.log('filteredLanguage', filteredLanguage);
       } else {
-        // if there are no saved preferences, load the default
-        await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(notificationTimes));
-        await checkAndRescheduleNotifications(notificationTimes);
+        setError('No language data available');
       }
     } catch (error) {
-      console.error(
-        'Error loading preferences:',
-        error instanceof Error ? error.message : 'Unknown error'
-      );
+      console.error('Error fetching language data:', error);
+      setError('Failed to load language data');
     } finally {
       setIsLoading(false);
     }
   }
 
-  async function checkNotificationLimit() {
-    const allNotifications = await getAllScheduledNotifications();
-    const notificationCount = allNotifications.length;
-    const MAX_NOTIFICATIONS = 49; // iOS limit is 64, leaving buffer for new schedules
+  // Determine if we should show in grid based on width
+  const isTablet = dimensions.width >= 600;
 
-    setIsLimitReached(notificationCount >= MAX_NOTIFICATIONS);
-
-    return notificationCount;
+  async function handleLanguageSelect(language) {
+    console.log('language', language);
+    setSelectedLanguage(language);
+    await AsyncStorage.setItem('language', JSON.stringify(language));
+    // Here you would typically save the language preference
+    const myLanguage = await AsyncStorage.getItem('language');
+    console.log('myLanguage', myLanguage);
   }
 
-  async function checkAndRescheduleNotifications(notificationTimes: NotificationTimeProps[]) {
-    for (const schedule of notificationTimes.filter((s) => s.isEnabled)) {
-      const existingNotifications = await getExistingNotifications(schedule.notificationID);
+  const renderLanguageItem = ({ item }) => (
+    <TouchableOpacity
+      style={[styles.languageItem, selectedLanguage === item.id && styles.selectedLanguageItem]}
+      onPress={() => handleLanguageSelect(item.id)}
+      activeOpacity={0.7}
+    >
+      <Text style={styles.languageFlag}>{item.flag}</Text>
+      <Text
+        style={[styles.languageName, selectedLanguage === item.id && styles.selectedLanguageName]}
+      >
+        {item.name}
+      </Text>
+      {selectedLanguage === item.id && (
+        <View style={styles.checkmarkContainer}>
+          <Text style={styles.checkmark}>✓</Text>
+        </View>
+      )}
+    </TouchableOpacity>
+  );
 
-      if (existingNotifications.length < 2) {
-        await Promise.all(
-          existingNotifications.map((notification) =>
-            cancelScheduledNotification(notification.identifier)
-          )
-        );
-      }
-      await scheduleLocalNotifications(schedule.time);
-      showNotificationsRenewedToast(schedule.time);
-    }
-  }
-
-  async function toggleSwitch(id: number) {
-    try {
-      const updatedTimes = await Promise.all(
-        notificationTimes.map(async (reminder) => {
-          const newIsEnabledValue = !reminder.isEnabled;
-
-          if (reminder.id === id) {
-            if (newIsEnabledValue) {
-              await scheduleLocalNotifications(reminder.time);
-              showNotificationsSetToast(reminder.time);
-              return {
-                ...reminder,
-                isEnabled: newIsEnabledValue,
-                notificationID: parseTimeIntoString(reminder.time),
-              };
-            } else {
-              const existingNotifications = await getExistingNotifications(reminder.notificationID);
-              for (const notification of existingNotifications) {
-                cancelScheduledNotification(notification.identifier);
-              }
-
-              return {
-                ...reminder,
-                isEnabled: newIsEnabledValue,
-                notificationID: null,
-              };
-            }
-          } else {
-            return reminder;
-          }
-        })
-      );
-      setNotificationTimes(updatedTimes);
-      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(updatedTimes));
-      await checkNotificationLimit();
-    } catch (error) {
-      console.log(error);
-    }
-  }
-
-  async function confirmTime() {
-    const formattedTime = formatTime(selectedTime);
-    const id = await scheduleLocalNotifications(formattedTime);
-    if (selectedTime) {
-      const newTime = {
-        id: Date.now(),
-        time: formattedTime,
-        isEnabled: true,
-        isCustom: true,
-        notificationID: id,
-      };
-      const listOfNewTimes = [...notificationTimes, newTime];
-      setNotificationTimes(listOfNewTimes);
-      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(listOfNewTimes));
-      await checkNotificationLimit();
-    }
-    setShowModal(false);
-    showNotificationsSetToast(formattedTime);
-  }
-
-  function addCustomTime() {
-    setSelectedTime(new Date());
-    setShowModal(true);
-  }
-
-  async function editCustomTime(id: number) {
-    const schedule = notificationTimes.find((time) => time.id === id);
-
-    // set the time the same as the selectedSchedule.time
-    if (schedule) {
-      setSelectedSchedule(schedule);
-      const utcDate = formatToDateObject(schedule.time);
-
-      setSelectedTime(utcDate);
-      setShowEditModal(true);
-    }
-  }
-
-  async function confirmEditTime() {
-    if (selectEditTime && selectedSchedule) {
-      await Notifications.cancelScheduledNotificationAsync(selectedSchedule.notificationID || '');
-      const formattedTime = formatTime(selectEditTime);
-      const notificationID = await scheduleLocalNotifications(formattedTime);
-
-      const updatedSchedule = {
-        ...selectedSchedule,
-        time: formattedTime,
-        notificationID,
-      };
-
-      // Update notification times immutably
-      const newNotificationTimes = notificationTimes.map((time) =>
-        time.id === selectedSchedule.id ? updatedSchedule : time
-      );
-
-      setNotificationTimes(newNotificationTimes);
-      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(newNotificationTimes));
-    }
-
-    setShowEditModal(false);
-  }
-
-  function onChangeTime(time: Date) {
-    setSelectedTime(time);
-  }
-
-  function onChangeEditTime(time: Date) {
-    setSelectEditTime(time);
-  }
-
-  async function removeCustomTime(id: number) {
-    setNotificationTimes(notificationTimes.filter((time: NotificationTimeProps) => time.id !== id));
-    await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(notificationTimes));
-    await checkNotificationLimit();
-  }
-
-  function showNotificationsRenewedToast(time: string) {
-    Toast.show({
-      type: 'info',
-      text1: 'Notifications Renewed',
-      text2: `Daily notifications renewed at ${time}.`,
-    });
-  }
-
-  function showNotificationsSetToast(time: string) {
-    Toast.show({
-      type: 'success',
-      text1: 'Notifications Set',
-      text2: `Daily notifications scheduled for ${time}.`,
-    });
-  }
+  const handleContinue = () => {
+    // Handle navigation to next screen
+    // console.log(`Continuing with ${selectedLanguage.name}`);
+    router.push('../(tabs)/settings');
+  };
 
   return (
-    <GestureHandlerRootView style={styles.container}>
-      <SafeAreaView style={{ flex: 1, paddingTop: 24 }}>
-        <Toast />
-        <NotificationHeader />
-        <NotificationTimesList
-          notificationTimes={notificationTimes}
-          toggleSwitch={toggleSwitch}
-          removeCustomTime={removeCustomTime}
-          editCustomTime={editCustomTime}
-        />
-        <AddTimeButton onPress={addCustomTime} isDisabled={isLimitReached} />
-        <NotificationButtonDescription isLimitReached={isLimitReached} />
-        <AddEditTimeModal
-          title="Add Time"
-          value={selectedTime}
-          visible={showModal}
-          onRequestClose={() => setShowModal(false)}
-          onClose={() => setShowModal(false)}
-          onChangeTime={(event, time) => onChangeTime(time)}
-          onConfirm={() => confirmTime()}
-        />
-        <AddEditTimeModal
-          title="Edit Time"
-          value={selectedTime}
-          visible={showEditModal}
-          onRequestClose={() => setShowEditModal(false)}
-          onClose={() => setShowEditModal(false)}
-          onChangeTime={(event, time) => onChangeEditTime(time)}
-          onConfirm={confirmEditTime}
-        />
-      </SafeAreaView>
-    </GestureHandlerRootView>
+    <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+
+      {/* Header */}
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Choose Your Language</Text>
+        <Text style={styles.headerSubtitle}>Select the language you prefer</Text>
+      </View>
+
+      {/* Language List */}
+      <FlatList
+        data={languageSelection}
+        renderItem={renderLanguageItem}
+        keyExtractor={(item) => item.id}
+        contentContainerStyle={styles.listContainer}
+        key={isTablet ? 'grid' : 'list'}
+        numColumns={isTablet ? 2 : 1}
+        columnWrapperStyle={isTablet ? styles.gridRow : undefined}
+      />
+
+      {/* Footer */}
+      <View style={styles.footer}>
+        {selectedLanguage && (
+          <TouchableOpacity
+            style={styles.continueButton}
+            onPress={handleContinue}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.continueButtonText}>Continue with {selectedLanguage.name}</Text>
+          </TouchableOpacity>
+        )}
+      </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#F8F9FA',
+  },
+  header: {
+    padding: 24,
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#EEEEEE',
+    alignItems: 'center',
+  },
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#212121',
+    marginBottom: 8,
+  },
+  headerSubtitle: {
+    fontSize: 16,
+    color: '#757575',
+  },
+  listContainer: {
+    padding: 16,
+    paddingBottom: 100, // Extra space at bottom to avoid button overlap
+  },
+  gridRow: {
+    justifyContent: 'space-between',
+  },
+  languageItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3.84,
+    elevation: 2,
+    flex: 1,
+    marginHorizontal: 4,
+  },
+  selectedLanguageItem: {
+    backgroundColor: '#E3F2FD',
+    borderWidth: 1,
+    borderColor: '#2196F3',
+  },
+  languageFlag: {
+    fontSize: 26,
+    marginRight: 16,
+  },
+  languageName: {
+    fontSize: 16,
+    color: '#212121',
+    flex: 1,
+  },
+  selectedLanguageName: {
+    fontWeight: 'bold',
+    color: '#2196F3',
+  },
+  checkmarkContainer: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#2196F3',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  checkmark: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  footer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: '#FFFFFF',
+    paddingTop: 12,
+    paddingBottom: Platform.OS === 'ios' ? 24 : 16,
+    paddingHorizontal: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#EEEEEE',
+  },
+  toggleButton: {
+    paddingVertical: 8,
+    alignItems: 'center',
+  },
+  toggleButtonText: {
+    color: '#2196F3',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  continueButton: {
+    backgroundColor: '#2196F3',
+    borderRadius: 12,
+    paddingVertical: 16,
+    alignItems: 'center',
+    marginTop: 12,
+  },
+  continueButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
 });
