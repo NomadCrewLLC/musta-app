@@ -52,7 +52,7 @@ export function AddEditTimeModal({
               display="spinner"
               onChange={onChangeTime}
               style={styles.timePicker}
-              minuteInterval={10}
+              // minuteInterval={10}
             />
           </View>
           <TouchableOpacity style={styles.confirmButton} onPress={onConfirm}>

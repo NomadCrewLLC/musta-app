@@ -32,3 +32,5 @@ export async function clearStorage() {
     console.error('Error clearing AsyncStorage:', error);
   }
 }
+
+

@@ -24,11 +24,20 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="index"
+        name="settings"
         options={{
           title: 'Settings',
           tabBarIcon: ({ color, focused }) => (
             <TabBarIcon name={focused ? 'cog' : 'cog-outline'} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="index"
+        options={{
+          title: 'Language',
+          tabBarIcon: ({ color, focused }) => (
+            <TabBarIcon name={focused ? 'earth' : 'earth-outline'} color={color} />
           ),
         }}
       />
