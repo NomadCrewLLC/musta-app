@@ -35,15 +35,12 @@ console.log('storedLanguageId first load', storedLanguageId);
 useEffect(() => {
   const checkStoredLanguage = async () => {
     const storedLanguage = await AsyncStorage.getItem('language');
-    console.log('storedLanguage', storedLanguage);
+    console.log('storedLanguage useEffect', storedLanguage);
     setStoredLanguageId(storedLanguage);
   };
 
   checkStoredLanguage();
 
-  // Optional: Set up an interval to periodically check for changes
-  const interval = setInterval(checkStoredLanguage, 1000);
-  return () => clearInterval(interval);
 }, []);
 
 // Modify the existing effect to depend on storedLanguageId

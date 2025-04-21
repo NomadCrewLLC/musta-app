@@ -18,33 +18,37 @@ import data from '@/app/data/phrase.json';
 const languageSelection = languages.selection;
 
 export default function LanguageScreen() {
-  const [selectedLanguage, setSelectedLanguage] = useState(null);
+  const [selectedLanguageID, setSelectedLanguageID] = useState(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [dimensions, setDimensions] = useState(Dimensions.get('window'));
-  console.log('selectedLanguage', selectedLanguage);
+  console.log('selectedLanguageID', selectedLanguageID);
 
-  // Add orientation change listener
+  // // Add orientation change listener
+  // useEffect(() => {
+  //   const onChange = ({ window }) => {
+  //     setDimensions(window);
+  //   };
+
+  //   Dimensions.addEventListener('change', onChange);
+
+  //   return () => {
+  //     // Clean up event listener
+  //     if (Platform.OS === 'android') {
+  //       // For older React Native versions
+  //       Dimensions.removeEventListener('change', onChange);
+  //     }
+  //   };
+  // }, []);
+
   useEffect(() => {
-    const onChange = ({ window }) => {
-      setDimensions(window);
-    };
-
-    Dimensions.addEventListener('change', onChange);
-
-    return () => {
-      // Clean up event listener
-      if (Platform.OS === 'android') {
-        // For older React Native versions
-        Dimensions.removeEventListener('change', onChange);
-      }
-    };
-  }, []);
-
-  useEffect(() => {
-    console.log('storedLanguageId is changed');
+    console.log('storedLanguageId index.tsx is changed');
     getLanguage();
-  }, [selectedLanguage]);
+  }, [selectedLanguageID]);
+
+  console.log('languageSelection', languageSelection);
+
+  const selectedLanguageObj = languageSelection.find((selection) => selection.id === selectedLanguageID)
 
   async function getLanguage() {
     try {
@@ -75,75 +79,74 @@ export default function LanguageScreen() {
   const isTablet = dimensions.width >= 600;
 
   async function handleLanguageSelect(language) {
-    console.log('language', language);
-    setSelectedLanguage(language);
+    setSelectedLanguageID(language);
     await AsyncStorage.setItem('language', JSON.stringify(language));
-    // Here you would typically save the language preference
-    const myLanguage = await AsyncStorage.getItem('language');
-    console.log('myLanguage', myLanguage);
   }
 
-  const renderLanguageItem = ({ item }) => (
-    <TouchableOpacity
-      style={[styles.languageItem, selectedLanguage === item.id && styles.selectedLanguageItem]}
-      onPress={() => handleLanguageSelect(item.id)}
-      activeOpacity={0.7}
-    >
-      <Text style={styles.languageFlag}>{item.flag}</Text>
-      <Text
-        style={[styles.languageName, selectedLanguage === item.id && styles.selectedLanguageName]}
+  function renderLanguageItem({item}) {
+    console.log('item', item);
+    return (
+      <TouchableOpacity
+        style={[styles.languageItem, selectedLanguageID === item.id && styles.selectedLanguageItem]}
+        onPress={() => handleLanguageSelect(item.id)}
+        activeOpacity={0.7}
       >
-        {item.name}
-      </Text>
-      {selectedLanguage === item.id && (
-        <View style={styles.checkmarkContainer}>
-          <Text style={styles.checkmark}>✓</Text>
-        </View>
-      )}
-    </TouchableOpacity>
-  );
-
-  const handleContinue = () => {
-    // Handle navigation to next screen
-    // console.log(`Continuing with ${selectedLanguage.name}`);
-    router.push('../(tabs)/settings');
-  };
-
-  return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
-
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Choose Your Language</Text>
-        <Text style={styles.headerSubtitle}>Select the language you prefer</Text>
-      </View>
-
-      {/* Language List */}
-      <FlatList
-        data={languageSelection}
-        renderItem={renderLanguageItem}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.listContainer}
-        key={isTablet ? 'grid' : 'list'}
-        numColumns={isTablet ? 2 : 1}
-        columnWrapperStyle={isTablet ? styles.gridRow : undefined}
-      />
-
-      {/* Footer */}
-      <View style={styles.footer}>
-        {selectedLanguage && (
-          <TouchableOpacity
-            style={styles.continueButton}
-            onPress={handleContinue}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.continueButtonText}>Continue with {selectedLanguage.name}</Text>
-          </TouchableOpacity>
+        <Text style={styles.languageFlag}>{item.flag}</Text>
+        <Text
+          style={[styles.languageName, selectedLanguageID === item.id && styles.selectedLanguageName]}
+        >
+          {item.name}
+        </Text>
+        {selectedLanguageID === item.id && (
+          <View style={styles.checkmarkContainer}>
+            <Text style={styles.checkmark}>✓</Text>
+          </View>
         )}
-      </View>
-    </SafeAreaView>
-  );
+      </TouchableOpacity>
+    );
+  }
+
+  function handleContinue() {
+    router.push('../(tabs)/settings');
+  }
+
+  if (!isLoading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+
+        {/* Header */}
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>Choose Your Language</Text>
+          <Text style={styles.headerSubtitle}>Select the language you prefer</Text>
+        </View>
+
+        {/* Language List */}
+        <FlatList
+          data={languageSelection}
+          renderItem={renderLanguageItem}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={styles.listContainer}
+          key={isTablet ? 'grid' : 'list'}
+          numColumns={isTablet ? 2 : 1}
+          columnWrapperStyle={isTablet ? styles.gridRow : undefined}
+        />
+
+        {/* Footer */}
+        <View style={styles.footer}>
+          {selectedLanguageID && (
+            <TouchableOpacity
+              style={styles.continueButton}
+              onPress={handleContinue}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.continueButtonText}>Continue with {selectedLanguageObj.name}</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      </SafeAreaView>
+    );
+  }
 }
 
 const styles = StyleSheet.create({

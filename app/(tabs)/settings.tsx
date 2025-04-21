@@ -18,11 +18,9 @@ import { NotificationHeader } from '@/components/NotificationHeader';
 import { AddTimeButton } from '@/components/AddTimeButton';
 import { NotificationTimesList } from '@/components/NotificationTimesList';
 import { NotificationButtonDescription } from '@/components/NotificationButtonDescription';
-import { clearStorage } from '@/hooks/asyncstorage.hooks';
+import { clearStorage, getAllKeys } from '@/hooks/asyncstorage.hooks';
 
-// clearStorage()
-
-const STORAGE_KEY = 'my_schedule_prerferences';
+const STORAGE_KEY = 'my_schedule_preferences';
 
 //Handle incoming notifications when the app is in the foreground
 Notifications.setNotificationHandler({
@@ -39,7 +37,7 @@ export default function NotificationSettings() {
   const [selectedTime, setSelectedTime] = useState<Date>(new Date());
   const [selectedSchedule, setSelectedSchedule] = useState<NotificationTimeProps | null>(null);
   const [selectEditTime, setSelectEditTime] = useState<Date>(new Date());
-  const [loading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [notificationTimes, setNotificationTimes] = useState<NotificationTimeProps[]>([
     { id: 1, time: '8:00 AM', isEnabled: false, isCustom: false, notificationID: null },
     { id: 2, time: '8:00 PM', isEnabled: false, isCustom: false, notificationID: null },
@@ -59,7 +57,8 @@ export default function NotificationSettings() {
 
       // Get the stored language ID
       const storedLanguage = await AsyncStorage.getItem('language');
-      setStoredLanguageId(storedLanguage ? JSON.parse(storedLanguage) : null)
+      setStoredLanguageId(storedLanguage ? JSON.parse(storedLanguage) : null);
+      console.log('storedLanguageId', storedLanguageId);
     } catch (error) {
       console.error('Error fetching language data:', error);
       setError('Failed to load language data');
@@ -96,6 +95,7 @@ export default function NotificationSettings() {
         'Error loading preferences:',
         error instanceof Error ? error.message : 'Unknown error'
       );
+      console.log('error', error);
     } finally {
       setIsLoading(false);
     }
@@ -103,7 +103,7 @@ export default function NotificationSettings() {
 
   async function checkNotificationLimit() {
     const allNotifications = await getAllScheduledNotifications();
-    console.log('allNotifications', allNotifications);
+    console.log('allNotifications from checkNotificationLimit', allNotifications);
     const notificationCount = allNotifications.length;
     const MAX_NOTIFICATIONS = 49; // iOS limit is 64, leaving buffer for new schedules
 
@@ -170,7 +170,7 @@ export default function NotificationSettings() {
 
   async function confirmTime() {
     const formattedTime = formatTime(selectedTime);
-    const id = await scheduleLocalNotifications(formattedTime);
+    const id = await scheduleLocalNotifications(formattedTime, storedLanguageId || '');
     if (selectedTime) {
       const newTime = {
         id: Date.now(),
@@ -210,7 +210,10 @@ export default function NotificationSettings() {
     if (selectEditTime && selectedSchedule) {
       await Notifications.cancelScheduledNotificationAsync(selectedSchedule.notificationID || '');
       const formattedTime = formatTime(selectEditTime);
-      const notificationID = await scheduleLocalNotifications(formattedTime);
+      const notificationID = await scheduleLocalNotifications(
+        formattedTime,
+        storedLanguageId || ''
+      );
 
       const updatedSchedule = {
         ...selectedSchedule,

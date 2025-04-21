@@ -46,25 +46,18 @@ export async function registerForPushNotificationsAsync() {
 
 function renderRandomNotification(languageID: string) {
   console.log('languageID renderRandomNotification', languageID);
-  const filteredLanguage = data.languages.find(
-    (language) => language.id === (languageID ? JSON.parse(languageID) : null)
+  const filteredLanguage = data?.languages.find(
+    (language) => language.id === (languageID ? languageID : null)
   );
 
-  // Add null check and provide fallback
-  if (!filteredLanguage || !filteredLanguage.phrases.length) {
-    // Return a default message or the first language's first phrase as fallback
-    const defaultLanguage = data.languages[0];
-    if (defaultLanguage && defaultLanguage.phrases.length) {
-      const defaultPhrase = defaultLanguage.phrases[0];
-      return `${defaultPhrase.phrase} = ${defaultPhrase.translation}`;
-    }
-    return 'No phrases available';
+  if (filteredLanguage) {
+    const randomIndex = Math.floor(Math.random() * filteredLanguage.phrases.length);
+    const randomPhrase = filteredLanguage.phrases[randomIndex];
+
+    return `${randomPhrase.phrase} = ${randomPhrase.translation}`;
+  } else {
+    return `No phrases available`;
   }
-
-  const randomIndex = Math.floor(Math.random() * filteredLanguage.phrases.length);
-  const randomPhrase = filteredLanguage.phrases[randomIndex];
-
-  return `${randomPhrase.phrase} = ${randomPhrase.translation}`;
 }
 
 export async function scheduleLocalNotifications(selectedTime: string, languageID: string) {
