@@ -127,6 +127,7 @@
           "translation": "Are you still work?"
         }
       ]
+<<<<<<< HEAD
     },
     {
       "id": "bis",
@@ -215,6 +216,8 @@
           "translation": "Where do you live?"
         }
       ]
+=======
+>>>>>>> 08551e453c76b3737279f98d89ed47fc46cbe801
     }
   ]
 }
