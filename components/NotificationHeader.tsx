@@ -1,11 +1,11 @@
 import { View, Text, StyleSheet } from 'react-native';
 import { Bell } from 'lucide-react-native';
 
-export function NotificationHeader() {
+export function NotificationHeader({ flag }) {
   return (
     <View style={styles.header}>
       <Bell color="#000" />
-      <Text style={styles.title}>Notification Times</Text>
+      <Text style={styles.title}>Notification Times {flag}</Text>
     </View>
   );
 }

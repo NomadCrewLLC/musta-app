@@ -1,260 +1,108 @@
-import React, { useState, useEffect } from 'react';
-import {
-  StyleSheet,
-  View,
-  Text,
-  TouchableOpacity,
-  SafeAreaView,
-  FlatList,
-  StatusBar,
-  Dimensions,
-  Platform,
-} from 'react-native';
-import languages from '@/app/data/languages.json';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { router } from 'expo-router';
-import data from '@/app/data/phrase.json';
-
-const languageSelection = languages.selection;
+import React from 'react';
+import { View, Text, FlatList, StyleSheet, TouchableOpacity, SafeAreaView } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import data from '@/app/data/languageData.json';
+import { useLanguage } from '@/components/LanguageContext';
 
 export default function LanguageScreen() {
-  const [selectedLanguageID, setSelectedLanguageID] = useState(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
-  const [dimensions, setDimensions] = useState(Dimensions.get('window'));
-  console.log('selectedLanguageID', selectedLanguageID);
+  const navigation = useNavigation();
+  const { setLanguage, currentLanguage, loading } = useLanguage();
 
-  // // Add orientation change listener
-  // useEffect(() => {
-  //   const onChange = ({ window }) => {
-  //     setDimensions(window);
-  //   };
-
-  //   Dimensions.addEventListener('change', onChange);
-
-  //   return () => {
-  //     // Clean up event listener
-  //     if (Platform.OS === 'android') {
-  //       // For older React Native versions
-  //       Dimensions.removeEventListener('change', onChange);
-  //     }
-  //   };
-  // }, []);
-
-  useEffect(() => {
-    console.log('storedLanguageId index.tsx is changed');
-    getLanguage();
-  }, [selectedLanguageID]);
-
-  console.log('languageSelection', languageSelection);
-
-  const selectedLanguageObj = languageSelection.find((selection) => selection.id === selectedLanguageID)
-
-  async function getLanguage() {
-    try {
-      setIsLoading(true);
-
-      // Get the stored language ID
-      const storedLanguage = await AsyncStorage.getItem('language');
-      console.log('storedLanguage getLanguage', storedLanguage);
-
-      // Find the language in our data
-      if (data.languages) {
-        const filteredLanguage = data.languages.find(
-          (language) => language.id === (storedLanguage ? JSON.parse(storedLanguage) : null)
-        );
-        console.log('filteredLanguage', filteredLanguage);
-      } else {
-        setError('No language data available');
-      }
-    } catch (error) {
-      console.error('Error fetching language data:', error);
-      setError('Failed to load language data');
-    } finally {
-      setIsLoading(false);
-    }
+  async function handleLanguageSelect(languageId: string) {
+    await setLanguage(languageId);
+    // navigation.goBack(); // Go back to previous screen
   }
 
-  // Determine if we should show in grid based on width
-  const isTablet = dimensions.width >= 600;
-
-  async function handleLanguageSelect(language) {
-    setSelectedLanguageID(language);
-    await AsyncStorage.setItem('language', JSON.stringify(language));
-  }
-
-  function renderLanguageItem({item}) {
-    console.log('item', item);
-    return (
-      <TouchableOpacity
-        style={[styles.languageItem, selectedLanguageID === item.id && styles.selectedLanguageItem]}
-        onPress={() => handleLanguageSelect(item.id)}
-        activeOpacity={0.7}
-      >
-        <Text style={styles.languageFlag}>{item.flag}</Text>
-        <Text
-          style={[styles.languageName, selectedLanguageID === item.id && styles.selectedLanguageName]}
-        >
-          {item.name}
-        </Text>
-        {selectedLanguageID === item.id && (
-          <View style={styles.checkmarkContainer}>
-            <Text style={styles.checkmark}>✓</Text>
-          </View>
-        )}
-      </TouchableOpacity>
-    );
-  }
-
-  function handleContinue() {
-    router.push('../(tabs)/settings');
-  }
-
-  if (!isLoading) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
-
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>Choose Your Language</Text>
-          <Text style={styles.headerSubtitle}>Select the language you prefer</Text>
+  const renderLanguageItem = ({ item }) => (
+    <TouchableOpacity
+      style={[styles.languageItem, currentLanguage?.id === item.id && styles.selectedLanguageItem]}
+      onPress={() => handleLanguageSelect(item.id)}
+      disabled={loading}
+    >
+      <Text style={styles.languageFlag}>{item.flag}</Text>
+      <View style={styles.languageInfo}>
+        <Text style={styles.languageName}>{item.name}</Text>
+        <Text style={styles.nativeName}>{item.nativeName}</Text>
+      </View>
+      {currentLanguage?.id === item.id && (
+        <View style={styles.checkmark}>
+          <Text style={styles.checkmarkText}>✓</Text>
         </View>
+      )}
+    </TouchableOpacity>
+  );
 
-        {/* Language List */}
-        <FlatList
-          data={languageSelection}
-          renderItem={renderLanguageItem}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.listContainer}
-          key={isTablet ? 'grid' : 'list'}
-          numColumns={isTablet ? 2 : 1}
-          columnWrapperStyle={isTablet ? styles.gridRow : undefined}
-        />
-
-        {/* Footer */}
-        <View style={styles.footer}>
-          {selectedLanguageID && (
-            <TouchableOpacity
-              style={styles.continueButton}
-              onPress={handleContinue}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.continueButtonText}>Continue with {selectedLanguageObj.name}</Text>
-            </TouchableOpacity>
-          )}
-        </View>
-      </SafeAreaView>
-    );
-  }
+  return (
+    <SafeAreaView style={styles.container}>
+      <Text style={styles.header}>Choose a Language</Text>
+      <FlatList
+        data={data.languages}
+        renderItem={renderLanguageItem}
+        keyExtractor={(item) => item.id}
+        contentContainerStyle={styles.list}
+      />
+    </SafeAreaView>
+  );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8F9FA',
+    backgroundColor: '#f8f9fa',
   },
   header: {
-    padding: 24,
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#EEEEEE',
-    alignItems: 'center',
-  },
-  headerTitle: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#212121',
-    marginBottom: 8,
+    textAlign: 'center',
+    margin: 20,
   },
-  headerSubtitle: {
-    fontSize: 16,
-    color: '#757575',
-  },
-  listContainer: {
+  list: {
     padding: 16,
-    paddingBottom: 100, // Extra space at bottom to avoid button overlap
-  },
-  gridRow: {
-    justifyContent: 'space-between',
   },
   languageItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
+    backgroundColor: '#ffffff',
     padding: 16,
-    marginBottom: 10,
+    borderRadius: 12,
+    marginBottom: 12,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3.84,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
     elevation: 2,
-    flex: 1,
-    marginHorizontal: 4,
   },
   selectedLanguageItem: {
-    backgroundColor: '#E3F2FD',
+    backgroundColor: '#e3f2fd',
     borderWidth: 1,
-    borderColor: '#2196F3',
+    borderColor: '#2196f3',
   },
   languageFlag: {
-    fontSize: 26,
+    fontSize: 28,
     marginRight: 16,
   },
-  languageName: {
-    fontSize: 16,
-    color: '#212121',
+  languageInfo: {
     flex: 1,
   },
-  selectedLanguageName: {
-    fontWeight: 'bold',
-    color: '#2196F3',
+  languageName: {
+    fontSize: 18,
+    fontWeight: '500',
+    color: '#212529',
   },
-  checkmarkContainer: {
+  nativeName: {
+    fontSize: 14,
+    color: '#6c757d',
+  },
+  checkmark: {
     width: 24,
     height: 24,
     borderRadius: 12,
-    backgroundColor: '#2196F3',
+    backgroundColor: '#2196f3',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  checkmark: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: 'bold',
-  },
-  footer: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: '#FFFFFF',
-    paddingTop: 12,
-    paddingBottom: Platform.OS === 'ios' ? 24 : 16,
-    paddingHorizontal: 16,
-    borderTopWidth: 1,
-    borderTopColor: '#EEEEEE',
-  },
-  toggleButton: {
-    paddingVertical: 8,
-    alignItems: 'center',
-  },
-  toggleButtonText: {
-    color: '#2196F3',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  continueButton: {
-    backgroundColor: '#2196F3',
-    borderRadius: 12,
-    paddingVertical: 16,
-    alignItems: 'center',
-    marginTop: 12,
-  },
-  continueButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
+  checkmarkText: {
+    color: 'white',
     fontWeight: 'bold',
   },
 });

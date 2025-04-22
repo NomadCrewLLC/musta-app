@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+// HomeScreen.tsx
+import React, { useRef, useCallback } from 'react';
 import {
   SafeAreaView,
   VirtualizedList,
@@ -8,9 +9,9 @@ import {
   View,
   ActivityIndicator,
 } from 'react-native';
-import data from '@/app/data/phrase.json';
+import { useFocusEffect } from '@react-navigation/native';
 import { FlashCard } from '@/components/FlashCard';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useLanguage } from '@/components/LanguageContext';
 
 type Phrase = {
   id: string;
@@ -19,79 +20,31 @@ type Phrase = {
 };
 
 export default function HomeScreen() {
-  const [phrases, setPhrases] = useState<Array<{ phrase: string; translation: string }>>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
-  const [selectedLanguageInfo, setSelectedLanguageInfo] = useState<{
-    id: string;
-    name: string;
-    flag: string;
-  } | null>(null);
+  const { currentLanguage, loading, error, refreshLanguage } = useLanguage();
+  // Use a ref to prevent multiple refreshes
+  const hasRefreshedRef = useRef(false);
 
-const [storedLanguageId, setStoredLanguageId] = useState<string | null>(null);
-console.log('storedLanguageId first load', storedLanguageId);
-
-// Add this effect to check for language changes
-useEffect(() => {
-  const checkStoredLanguage = async () => {
-    const storedLanguage = await AsyncStorage.getItem('language');
-    console.log('storedLanguage useEffect', storedLanguage);
-    setStoredLanguageId(storedLanguage);
-  };
-
-  checkStoredLanguage();
-
-}, []);
-
-// Modify the existing effect to depend on storedLanguageId
-useEffect(() => {
-  console.log('storedLanguageId is changed');
-  getLanguage();
-}, [storedLanguageId]);
-
-  async function getLanguage() {
-    try {
-      setLoading(true);
-
-      // Get the stored language ID
-      const storedLanguage = await AsyncStorage.getItem('language');
-      console.log('storedLanguage getLanguage', storedLanguage);
-
-      // Find the language in our data
-      if (data.languages) {
-        const filteredLanguage = data.languages.find(
-          (language) => language.id === (storedLanguage ? JSON.parse(storedLanguage) : null)
-        );
-
-        if (filteredLanguage) {
-          setPhrases(filteredLanguage.phrases);
-          setSelectedLanguageInfo({
-            id: filteredLanguage.id,
-            name: filteredLanguage.name,
-            flag: filteredLanguage.flag,
-          });
-        } else {
-          setError(
-            `Language with ID "${storedLanguage ? JSON.parse(storedLanguage) : 'null'}" not found in data`
-          );
-        }
-      } else {
-        setError('No language data available');
+  // Refresh language data when screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      if (!hasRefreshedRef.current) {
+        refreshLanguage();
+        hasRefreshedRef.current = true;
       }
-    } catch (error) {
-      console.error('Error fetching language data:', error);
-      setError('Failed to load language data');
-    } finally {
-      setLoading(false);
-    }
-  }
 
-  // Create a proper item getter for VirtualizedList
+      return () => {
+        // Reset the flag when component loses focus
+        hasRefreshedRef.current = false;
+      };
+    }, []) // Remove refreshLanguage from dependencies to prevent loops
+  );
+
+  // Create a getter for VirtualizedList
   const getPhrase = (_data: any, index: number): Phrase => {
     return {
-      id: index.toString(), // Simpler and more reliable ID
-      phrase: phrases[index]?.phrase || '',
-      translation: phrases[index]?.translation || '',
+      id: index.toString(),
+      phrase: currentLanguage?.phrases[index]?.phrase || '',
+      translation: currentLanguage?.phrases[index]?.translation || '',
     };
   };
 
@@ -114,8 +67,8 @@ useEffect(() => {
     );
   }
 
-  // No phrases state
-  if (!phrases || phrases.length === 0) {
+  // No language/phrases available
+  if (!currentLanguage || !currentLanguage.phrases || currentLanguage.phrases.length === 0) {
     return (
       <SafeAreaView style={styles.centerContainer}>
         <Text>No phrases available.</Text>
@@ -125,25 +78,23 @@ useEffect(() => {
 
   return (
     <SafeAreaView style={styles.container}>
-      {selectedLanguageInfo && (
-        <View style={styles.header}>
-          <Text style={styles.headerFlag}>{selectedLanguageInfo.flag}</Text>
-          <Text style={styles.headerTitle}>{selectedLanguageInfo.name}</Text>
-        </View>
-      )}
+      <View style={styles.header}>
+        <Text style={styles.headerFlag}>{currentLanguage.flag}</Text>
+        <Text style={styles.headerTitle}>{currentLanguage.name}</Text>
+      </View>
 
       <Text style={styles.subheader}>
         Learn this language or forever be trapped in tourist restaurants with pictures on the menu.
       </Text>
 
       <VirtualizedList
-        data={phrases}
+        data={currentLanguage.phrases}
         initialNumToRender={4}
         renderItem={({ item }: { item: Phrase }) => (
           <FlashCard title={item.phrase} subtitle={item.translation} />
         )}
         keyExtractor={(item: Phrase) => item.id}
-        getItemCount={() => phrases.length}
+        getItemCount={() => currentLanguage.phrases.length}
         getItem={getPhrase}
         contentContainerStyle={styles.listContent}
       />

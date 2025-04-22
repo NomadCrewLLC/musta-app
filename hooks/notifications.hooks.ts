@@ -2,7 +2,7 @@ import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
 import Constants from 'expo-constants';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import data from '@/app/data/phrase.json';
+import data from '@/app/data/languageData.json';
 import { parseTimeIntoObject, parseTimeIntoString } from '@/helpers/datetime.helper';
 
 const DAYS_TO_SCHEDULE = 16; // Schedule ~two weeks's worth of notifications
@@ -45,7 +45,6 @@ export async function registerForPushNotificationsAsync() {
 }
 
 function renderRandomNotification(languageID: string) {
-  console.log('languageID renderRandomNotification', languageID);
   const filteredLanguage = data?.languages.find(
     (language) => language.id === (languageID ? languageID : null)
   );
@@ -61,7 +60,6 @@ function renderRandomNotification(languageID: string) {
 }
 
 export async function scheduleLocalNotifications(selectedTime: string, languageID: string) {
-  console.log('languageID scheduleLocalNotifications', languageID);
   const notificationID = parseTimeIntoString(selectedTime);
 
   // Schedule notifications for the next DAYS_TO_SCHEDULE days
