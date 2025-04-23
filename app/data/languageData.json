@@ -127,6 +127,103 @@
           "translation": "Are you still work?"
         }
       ]
+<<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 0104882 (add Cebuano language and phrases)
+    },
+    {
+      "id": "bis",
+      "name": "Cebuano",
+      "nativeName": "Cebuano",
+      "flag": "🇵🇭",
+      "phrases": [
+        {
+          "phrase": "Maayong adlaw",
+          "translation": "Good day"
+        },
+        {
+          "phrase": "Kumusta ka?",
+          "translation": "How are you?"
+        },
+        {
+          "phrase": "Salamat kaayo",
+          "translation": "Thank you very much"
+        },
+        {
+          "phrase": "Pila man ni?",
+          "translation": "How much is this?"
+        },
+        {
+          "phrase": "Asa ang banyo?",
+          "translation": "Where is the bathroom?"
+        },
+        {
+          "phrase": "Giuhaw ko",
+          "translation": "I am thirsty"
+        },
+        {
+          "phrase": "Gigutom ko",
+          "translation": "I am hungry"
+        },
+        {
+          "phrase": "Nindot kaayo",
+          "translation": "Very beautiful"
+        },
+        {
+          "phrase": "Unsay imong ngalan?",
+          "translation": "What is your name?"
+        },
+        {
+          "phrase": "Asa ka padulong?",
+          "translation": "Where are you going?"
+        },
+        {
+          "phrase": "Amping kanunay",
+          "translation": "Take care always"
+        },
+        {
+          "phrase": "Maayong buntag",
+          "translation": "Good morning"
+        },
+        {
+          "phrase": "Maayong hapon",
+          "translation": "Good afternoon"
+        },
+        {
+          "phrase": "Maayong gabii",
+          "translation": "Good evening"
+        },
+        {
+          "phrase": "Lami kaayo",
+          "translation": "Very delicious"
+        },
+        {
+          "phrase": "Tagpila ni?",
+          "translation": "How much is this?"
+        },
+        {
+          "phrase": "Nakakasabot ka?",
+          "translation": "Do you understand?"
+        },
+        {
+          "phrase": "Wa ko kasabot",
+          "translation": "I don't understand"
+        },
+        {
+          "phrase": "Gusto ko motuon og Binisaya",
+          "translation": "I want to learn Bisaya"
+        },
+        {
+          "phrase": "Asa ka nagpuyo?",
+          "translation": "Where do you live?"
+        }
+      ]
+<<<<<<< HEAD
+=======
+>>>>>>> 08551e453c76b3737279f98d89ed47fc46cbe801
+=======
+>>>>>>> 0104882 (add Cebuano language and phrases)
     }
   ]
 }
