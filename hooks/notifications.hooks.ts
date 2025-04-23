@@ -2,7 +2,7 @@ import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
 import Constants from 'expo-constants';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import data from '@/app/data/phrases.json';
+import data from '@/app/data/languageData.json';
 import { parseTimeIntoObject, parseTimeIntoString } from '@/helpers/datetime.helper';
 
 const DAYS_TO_SCHEDULE = 16; // Schedule ~two weeks's worth of notifications
@@ -44,14 +44,22 @@ export async function registerForPushNotificationsAsync() {
   return token;
 }
 
-function renderRandomNotification() {
-  const randomIndex = Math.floor(Math.random() * data.phrases.length);
-  const randomPhrase = data.phrases[randomIndex];
+function renderRandomNotification(languageID: string) {
+  const filteredLanguage = data?.languages.find(
+    (language) => language.id === (languageID ? languageID : null)
+  );
 
-  return `${randomPhrase.phrase} = ${randomPhrase.translation}`;
+  if (filteredLanguage) {
+    const randomIndex = Math.floor(Math.random() * filteredLanguage.phrases.length);
+    const randomPhrase = filteredLanguage.phrases[randomIndex];
+
+    return `${randomPhrase.phrase} = ${randomPhrase.translation}`;
+  } else {
+    return `No phrases available`;
+  }
 }
 
-export async function scheduleLocalNotifications(selectedTime: string) {
+export async function scheduleLocalNotifications(selectedTime: string, languageID: string) {
   const notificationID = parseTimeIntoString(selectedTime);
 
   // Schedule notifications for the next DAYS_TO_SCHEDULE days
@@ -74,7 +82,7 @@ export async function scheduleLocalNotifications(selectedTime: string) {
       identifier: dailyNotificationID,
       content: {
         title: 'Time to learn a new phrase 🤓',
-        body: renderRandomNotification(), // Each day will get a different random notification
+        body: renderRandomNotification(languageID), // Each day will get a different random notification
       },
       trigger,
     });
