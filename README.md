@@ -35,6 +35,15 @@ npm run reset-project
 
 This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
 
+## Publish an Update
+Run the following command to publish your update to Expo:
+
+```bash
+eas update --auto
+```
+
+This will automatically build and publish the latest changes to your project.
+
 ## Learn more
 
 To learn more about developing your project with Expo, look at the following resources:
