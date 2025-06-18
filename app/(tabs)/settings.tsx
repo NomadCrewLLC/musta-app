@@ -26,9 +26,10 @@ const STORAGE_KEY = 'my_schedule_preferences';
 // Handle incoming notifications when the app is in the foreground
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
-    shouldShowAlert: true,
+    shouldShowBanner: true,
     shouldPlaySound: true,
     shouldSetBadge: false,
+    shouldShowList: false,
   }),
 });
 
